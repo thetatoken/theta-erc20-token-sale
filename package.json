@@ -1,0 +1,31 @@
+{
+  "name": "customtoken",
+  "version": "1.0.0",
+  "description": "Custom Token",
+  "main": "index.js",
+  "scripts": {
+    "compile": "truffle compile",
+    "deploy:dev": "truffle migrate --network development",
+    "deploy:private": "truffle migrate --network privateChain",
+    "test": "truffle test --network privateChain ./test/test.js",
+    "testrpc": "testrpc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xuxiao415/CustomToken.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xuxiao415/CustomToken/issues"
+  },
+  "homepage": "https://github.com/xuxiao415/CustomToken#readme",
+  "devDependencies": {
+    "ethereumjs-testrpc": "^6.0.1",
+    "truffle": "^4.0.1"
+  },
+  "dependencies": {
+    "promise": "^8.0.1",
+    "web3": "^0.19.0"
+  }
+}
