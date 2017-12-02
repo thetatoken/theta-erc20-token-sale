@@ -22,11 +22,8 @@ contract('ThetaToken', function(accounts) {
     var precirculation_amount = 3000;
     var donation_amount = 100;
     var cashout_amount = 50;
-    var public_sale_amount = 4000000; 
-
 
     console.log("Imported node Accounts: \n", accounts);
-
 
     it ("Integration test: deploy", function() {
         console.log('----------------');
@@ -55,9 +52,9 @@ contract('ThetaToken', function(accounts) {
 
     it ("Integration test: set start and end time of sale", function() {
         console.log('----------------');
-        return theta_token_sale.setEndTimeOfSale(sell_end_block, {from: admin_addr, gas:4700000})
+        return theta_token_sale.setStartTimeOfSale(sell_start_block, {from: admin_addr, gas:4700000})
             .then(function() {
-                return theta_token_sale.setStartTimeOfSale(sell_start_block, {from: admin_addr, gas:4700000})
+                return theta_token_sale.setEndTimeOfSale(sell_end_block, {from: admin_addr, gas:4700000})
             })
             .then(function() {
                 return theta_token_sale.initialBlock.call()
@@ -223,12 +220,13 @@ contract('ThetaToken', function(accounts) {
     });
 
     it ("Creating snapshot for blockchain after preparation", function() {
+        console.log('----------------');
         snapshot_deployed_blockchain = {
             jsonrpc: "2.0",
             method: "evm_snapshot",
         }
         snapshot_number = web3.currentProvider.send(snapshot_deployed_blockchain);
-        console.log('Preparation finished. Blockchain snapshot created with ID ' + snapshot_number.result);
+        console.log('Preparation finished. Blockchain snapshot created with ' + snapshot_number.result);
     });
 });
 
