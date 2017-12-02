@@ -8,7 +8,7 @@ module.exports = {
             network_id: "*", // Match any network id
             gasPrice: 1e11,
             gas: 4700000,
-            from: '0xd0df2687ad07e3e81ab0020e556cec5e0f66b484'
+            from: '0x2aa61a64bab31d9a32f3efc0f096d10e6f839a60'
         },
         privateChain: {
             host: "localhost",

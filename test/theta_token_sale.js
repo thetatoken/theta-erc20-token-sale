@@ -130,6 +130,38 @@ contract('ThetaTokenSale', function(accounts) {
             });
     });
 
+    it ("ThetaTokenSale: change hard caps", function() {
+        console.log('----------------');
+        return thetaTokenSale.tokenSaleHardCap.call()
+            .then(function(token_sale_hard_cap) {
+                console.log('Current token sale hard cap: ' + token_sale_hard_cap.toString());
+                new_token_sale_hard_cap = 31 * (10**6) * (10**18);
+                return thetaTokenSale.changeTokenSaleHardCap(new_token_sale_hard_cap, {from: accounts[1], gas: 4700000});
+            })
+            .then(function() {
+                return thetaTokenSale.tokenSaleHardCap.call();
+            })
+            .then(function(token_sale_hard_cap) {
+                console.log('Updated token sale hard cap: ' + token_sale_hard_cap.toString());
+                assert.equal(token_sale_hard_cap, new_token_sale_hard_cap, 'token sale hard cap should have changed!');
+            })
+            .then(function() {
+                return thetaTokenSale.fundCollectedHardCap.call();
+            })
+            .then(function(fund_collected_hard_cap) {
+                console.log('Current fund collected hard cap: ' + fund_collected_hard_cap.toString());
+                new_fund_collected_hard_cap = 26000 * (10**18);
+                return thetaTokenSale.changeFundCollectedHardCap(new_fund_collected_hard_cap, {from: accounts[1], gas: 4700000});
+            })
+            .then(function() {
+                return thetaTokenSale.fundCollectedHardCap.call();
+            })
+            .then(function(fund_collected_hard_cap) {
+                console.log('Updated fund collected hard cap: ' + fund_collected_hard_cap.toString());
+                assert.equal(fund_collected_hard_cap, new_fund_collected_hard_cap, 'fund collected hard cap should have changed!')
+            });
+    })
+
     it ("ThetaTokenSale: modify whitelist controller", function() {
         console.log('----------------');
         return thetaTokenSale.getWhitelistController()
