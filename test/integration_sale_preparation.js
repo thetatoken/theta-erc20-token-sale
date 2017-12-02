@@ -15,16 +15,18 @@ contract('ThetaToken', function(accounts) {
     var theta_token;
     var theta_token_sale;
     var exchange_rate = 3000;
-    var sell_start_block = 20000;
-    var sell_end_block = 60000;
+    var sell_start_block = 120;
+    var sell_end_block = 220;
     var unlock_time = 70000;
     var presale_amount = 20000000;
     var precirculation_amount = 3000;
     var donation_amount = 100;
     var cashout_amount = 50;
+    var public_sale_amount = 4000000; 
 
 
     console.log("Imported node Accounts: \n", accounts);
+
 
     it ("Integration test: deploy", function() {
         console.log('----------------');
@@ -110,7 +112,7 @@ contract('ThetaToken', function(accounts) {
             .then(function() {
                 console.log('done.')          
             })
-    })
+    });
 
     it ("Integration test: transfer from thetalab_reserve_addr to sliver_integration_addr", function() {
         console.log('----------------');
@@ -136,7 +138,7 @@ contract('ThetaToken', function(accounts) {
             .then(function(res) {
                 console.log('Sliver integration account balance: ' + res);
             })
-    })
+    });
 
     it ("Integration test: remove thetalab_reserve_addr from precirculation", function() {
         console.log('----------------');
@@ -147,7 +149,7 @@ contract('ThetaToken', function(accounts) {
             .then(function(res) {
                 console.log('is precirculation allowed for thetalab_reserve_addr ' + thetalab_reserve_addr + ' ? ' + res);
             })
-    })
+    });
 
     it ("Integration test: testing sliver_integration_addr transfer to streamer_addr", function() {
         console.log('----------------');
@@ -173,7 +175,7 @@ contract('ThetaToken', function(accounts) {
             .then(function(res) {
                 console.log('Streamer account balance: ' + res);
             })
-    })
+    });
 
     it ("Integration test: testing streamer_addr transfer to sliver_integration_addr", function() {
         console.log('----------------');
@@ -199,9 +201,9 @@ contract('ThetaToken', function(accounts) {
             .then(function(res) {
                 console.log('Streamer account balance: ' + res);
             })
-    })
+    });
 
-    it ("Integration test: add whitelist public_sale_addr and presale_addr: ", function() {
+    it ("Integration test: add whitelist public_sale_addr and presale_addr", function() {
         console.log('----------------');
         return theta_token_sale.addAccountsToWhitelist([public_sale_addr, presale_addr], {from: whitelist_controller, gas:4700000})
             .then(function() {
@@ -218,6 +220,15 @@ contract('ThetaToken', function(accounts) {
             .then(function(res) {
                 console.log('All whitelisted accounts: ' + res);
             })
+    });
+
+    it ("Creating snapshot for blockchain after preparation", function() {
+        snapshot_deployed_blockchain = {
+            jsonrpc: "2.0",
+            method: "evm_snapshot",
+        }
+        snapshot_number = web3.currentProvider.send(snapshot_deployed_blockchain);
+        console.log('Preparation finished. Blockchain snapshot created with ID ' + snapshot_number.result);
     });
 });
 
