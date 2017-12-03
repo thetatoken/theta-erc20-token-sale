@@ -135,7 +135,7 @@ contract('ThetaTokenSale', function(accounts) {
         return thetaTokenSale.tokenSaleHardCap.call()
             .then(function(token_sale_hard_cap) {
                 console.log('Current token sale hard cap: ' + token_sale_hard_cap.toString());
-                new_token_sale_hard_cap = 31 * (10**6) * (10**18);
+                new_token_sale_hard_cap = 31 * Math.pow(10, 6) * Math.pow(10, 18);
                 return thetaTokenSale.changeTokenSaleHardCap(new_token_sale_hard_cap, {from: accounts[1], gas: 4700000});
             })
             .then(function() {
@@ -150,7 +150,7 @@ contract('ThetaTokenSale', function(accounts) {
             })
             .then(function(fund_collected_hard_cap) {
                 console.log('Current fund collected hard cap: ' + fund_collected_hard_cap.toString());
-                new_fund_collected_hard_cap = 26000 * (10**18);
+                new_fund_collected_hard_cap = 26000 * Math.pow(10, 18);
                 return thetaTokenSale.changeFundCollectedHardCap(new_fund_collected_hard_cap, {from: accounts[1], gas: 4700000});
             })
             .then(function() {
@@ -174,7 +174,7 @@ contract('ThetaTokenSale', function(accounts) {
                 return thetaTokenSale.changeWhitelistController(accounts[8], {from: accounts[1], gas: 4700000});
             })
             .then(function() {
-                return thetaTokenSale.getWhitelistController();
+                return thetaTokenSale.getWhitelistController({from: accounts[1], gas: 4700000});
             })
             .then(function(res) {
                 new_whitelist_controller = res;
@@ -265,11 +265,11 @@ contract('ThetaTokenSale', function(accounts) {
                 return thetaTokenSale.getExchangeRateController();
             })
             .then(function(res) {
-                exchange_rage_controller = res;
+                exchange_rate_controller = res;
                 console.log('Existing exchange rate controller: ' + res);
                 new_exchange_rate = 12345;
                 console.log('Changing exchange rate to ' + new_exchange_rate.toString());
-                return thetaTokenSale.setExchangeRate(new_exchange_rate, {from: exchange_rage_controller, gas:4700000});
+                return thetaTokenSale.setExchangeRate(new_exchange_rate, {from: exchange_rate_controller, gas:4700000});
             })
             .then(function() {
                 return thetaTokenSale.exchangeRate.call();
@@ -403,7 +403,7 @@ contract('ThetaTokenSale', function(accounts) {
             ;
     });
 
-    it ("ThetaTokenSale: transfer admin", function() {
+    it ("ThetaTokenSale: transfer admin with new root", function() {
         console.log('----------------');
         return thetaTokenSale.getAdmin()
             .then(function(res) {
@@ -427,5 +427,95 @@ contract('ThetaTokenSale', function(accounts) {
             })
             ;
     });
+
+    it ("ThetaTokenSale: test new admin", function() {
+        console.log('----------------');
+        console.log('Use new admin to change fund deposit..');
+        new_admin = accounts[9];
+        return thetaTokenSale.changeFundDeposit(accounts[4], {from: new_admin, gas: 4700000})
+            .then(function() {
+                return thetaTokenSale.getFundDeposit({from: new_admin, gas: 4700000});
+            })
+            .then(function(res) {
+                new_fund_deposit = res;
+                console.log('New fund deposit: ' + new_fund_deposit);
+                assert.equal(new_fund_deposit, accounts[4], 'Fund deposit should have been changed');
+
+                console.log('Use new admin to change whitelistController..');
+                return thetaTokenSale.changeWhitelistController(accounts[2], {from: new_admin, gas: 4700000});
+            })
+            .then(function() {
+                return thetaTokenSale.getWhitelistController({from: new_admin, gas: 4700000});
+            })
+            .then(function(res) {
+                new_whitelist_controller = res;
+                console.log('New whitelist controller: ' + new_whitelist_controller);
+                assert.equal(new_whitelist_controller == accounts[2], true, 'new whitelist controller should be updated');
+
+                console.log('Use new admin to change exchangeRateController..');
+                return thetaTokenSale.changeExchangeRateController(accounts[2], {from: new_admin, gas: 4700000});
+            })
+            .then(function() {
+                return thetaTokenSale.getExchangeRateController({from: new_admin, gas: 4700000});
+            })
+            .then(function(res) {
+                new_exchange_rate_controller = res;
+                console.log('New exchange rate controller: ' + new_exchange_rate_controller);
+                assert.equal(new_exchange_rate_controller == accounts[2], true, 'new exchange rate controller should be updated');
+            })
+            ;
+    });
+
+    it ("ThetaTokenSale: test new whitelist controller", function() {
+        console.log('----------------');
+        console.log('Use new whitelistController to whitelist');
+        return thetaTokenSale.getWhitelist()
+            .then(function(res) {
+                console.log('Current whitelist: ' + res);
+                console.log('Adding these accounts to whitelist: ' + accounts[8] + ' ' + accounts[9]);
+                new_whitelist_controller = accounts[2];
+                return thetaTokenSale.addAccountsToWhitelist([accounts[8], accounts[9]], {from: accounts[2], gas:4700000});
+            })
+            .then(function() {
+                return thetaTokenSale.getWhitelist();
+            })
+            .then(function(res) {
+                console.log('Whitelist after adding addresses to whitelist: ' + res);
+                return thetaTokenSale.isWhitelisted(accounts[8]);
+            })
+            .then(function(res) {
+                console.log('is ' + accounts[8] + ' whitelisted? ' + res);
+                assert.equal(res, true, 'Account should have been whitelisted');
+                return thetaTokenSale.isWhitelisted(accounts[9]);
+            })
+            .then(function(res) {
+                console.log('is ' + accounts[9] + ' whitelisted? ' + res);
+                assert.equal(res, true, 'Account should have been whitelisted');
+            })
+            ;
+    });
+
+    it ("ThetaTokenSale: test exchange rate with new controller", function() {
+        console.log('----------------');
+        console.log('Use new exchange rate to set exchange rate');
+        return thetaTokenSale.exchangeRate.call()
+            .then(function(res) {
+                console.log('Exisitng exchange rate: ' + res);
+                new_exchange_rate_controller = accounts[2];
+                new_exchange_rate = 54321;
+                console.log('Changing exchange rate to ' + new_exchange_rate.toString());
+                return thetaTokenSale.setExchangeRate(new_exchange_rate, {from: new_exchange_rate_controller, gas:4700000});
+            })
+            .then(function() {
+                return thetaTokenSale.exchangeRate.call();
+            })
+            .then(function(res) {
+                console.log('New exchange rate: ' + res);
+                assert.equal(res, new_exchange_rate, 'Excahnge rate should have been changed');
+            })
+            ;
+    });
+
+
 });
 

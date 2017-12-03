@@ -26,8 +26,6 @@ contract('ThetaToken', function(accounts) {
     var cashout_amount = 50;
     var public_sale_amount = 3000000000000000000;  //3 ether
 
-    var blockchain_snapshot_to_load = '0x02';
-
     console.log("Imported node Accounts: \n", accounts);
 
     it ("Integration test: deploy & preparation : ", function() {
