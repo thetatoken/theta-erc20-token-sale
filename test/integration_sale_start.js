@@ -8,23 +8,25 @@ contract('ThetaToken', function(accounts) {
     var thetalab_reserve_addr = accounts[4];
     var fund_deposit_addr = accounts[5];
     var presale_addr = accounts[6];
-    var sliver_integration_addr = accounts[7];
+    var token_recepient_address = accounts[7];
     var streamer_addr = accounts[8];
     var public_sale_addr = accounts[9];
 
     var theta_token;
     var theta_token_sale;
     var exchange_rate = 1;
-    var sell_start_block_delta = 50; // current block + delta = start block
-    var sell_end_block_delta = 150; // current block + delta = end block
+    var sell_start_block_delta = 30; // current block + delta = start block
+    var sell_end_block_delta = 60; // current block + delta = end block
     var sell_start_block;
     var sell_end_block;
-    var unlock_time = 70000;
+    var unlock_time_delta = 90; // current block + delta = unlock time
+    var unlock_time;
     var presale_amount = 20000000;
     var precirculation_amount = 3000;
     var donation_amount = 100;
     var cashout_amount = 50;
     var public_sale_amount = 3000000000000000000;  //3 ether
+    var token_transfer_amount = 2000000000000000000;
 
     console.log("Imported node Accounts: \n", accounts);
 
@@ -55,6 +57,8 @@ contract('ThetaToken', function(accounts) {
             })
             .then(function() {
                 console.log('Setting unlock time');
+                unlock_time = web3.eth.blockNumber + unlock_time_delta;
+                console.log('Setting token unlock time ' + unlock_time);
                 return theta_token_sale.changeUnlockTime(unlock_time, {from: admin_addr, gas:4700000});
             })
             .then(function() {
@@ -145,6 +149,89 @@ contract('ThetaToken', function(accounts) {
                 console.log('Ether balance of fund deposit account after invest is  ' + fund_deposit_eth_balance_after_invest);
                 assert.equal(Number(fund_deposit_eth_balance_before_invest), Number(fund_deposit_eth_balance_after_invest) - Number(public_sale_amount), 'incorrect fund deposit ether balance');
             })
+            ;
+    });
+
+    it ("Integration test: end sale", function() {
+        console.log('----------------');
+        return theta_token_sale.saleFinalized.call()
+            .then(function(res) {
+                console.log('Sale finalization status: ' + res);
+                assert.equal(res, false, 'sale should not be finalized yet')
+                // fast forward to sale end time
+                for (var i = web3.eth.blockNumber; i < sell_end_block; i ++) {
+                    console.log('fast-forwarding block :' + web3.eth.blockNumber)
+                    force_block = {
+                        jsonrpc: "2.0",
+                        method: "evm_mine",
+                        id: i
+                    }
+                    web3.currentProvider.send(force_block);
+                };
+                console.log('Current blocknumber is :' + web3.eth.blockNumber);
+                return theta_token_sale.finalizeSale({from: root_addr, gas:4700000});
+            })
+            .then(function() {
+                return theta_token_sale.saleFinalized.call();
+            })
+            .then(function(res) {
+                console.log('Sale finalization status: ' + res);
+                assert.equal(res, true, 'sale should be finalized')
+            })
+            ;
+    });
+
+    it ("Integration test: transfer after unlock", function() {
+        console.log('----------------');
+        return theta_token.getUnlockTime()
+            .then(function(res) {
+                console.log('Unlock time is: ' + res);
+                assert.equal(res, unlock_time, 'unlock time should be unchanged');
+
+                // fast forward to unlock time
+                for (var i = web3.eth.blockNumber; i < unlock_time; i ++) {
+                    console.log('fast-forwarding block :' + web3.eth.blockNumber)
+                    force_block = {
+                        jsonrpc: "2.0",
+                        method: "evm_mine",
+                        id: i
+                    }
+                    web3.currentProvider.send(force_block);
+                };
+                console.log('Current blocknumber is :' + web3.eth.blockNumber);
+                return theta_token.balanceOf(token_recepient_address);
+            })
+            .then(function(res) {
+                sliver_integration_token_balance_before_transfer = res;
+                console.log('Token balance of token recepient before transfer is  ' + sliver_integration_token_balance_before_transfer);
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(res) {
+                public_sale_token_balance_before_transfer = res;
+                console.log('Token balance of public sale address before transfer is ' + public_sale_token_balance_before_transfer);
+
+                console.log('');
+                console.log('Transfer ' + token_transfer_amount + ' from public sale address to token recepient..');
+                return theta_token.transfer(token_recepient_address, token_transfer_amount, {from: public_sale_addr, gas: 4700000});
+            })
+            .then(function() {
+                console.log('Transfer done.');
+                return theta_token.balanceOf(token_recepient_address);
+            })
+            .then(function(res) {
+                console.log('');
+                sliver_integration_token_balance_after_transfer = res;
+                console.log('Token balance of token recepient after transfer is ' + sliver_integration_token_balance_after_transfer);
+                assert.equal(Number(sliver_integration_token_balance_before_transfer) + Number(token_transfer_amount), Number(sliver_integration_token_balance_after_transfer), 'incorrect token recepient token balance');
+
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(res) {
+                public_sale_token_balance_after_transfer = res;
+                console.log('Token balance of public sale address after transfer is ' + public_sale_token_balance_after_transfer);
+                assert.equal(Number(public_sale_token_balance_before_transfer) - Number(token_transfer_amount), Number(public_sale_token_balance_after_transfer), 'incorrect public sale addr token balance');
+            })
+            ;
     });
 });
 
