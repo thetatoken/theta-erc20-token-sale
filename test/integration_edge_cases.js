@@ -16,8 +16,8 @@ contract('ThetaToken', function(accounts) {
     var theta_token;
     var theta_token_sale;
     var exchange_rate = 3000;
-    var sell_start_block = 30;
-    var sell_end_block = 220;
+    var sell_start_block = web3.eth.blockNumber + 20;
+    var sell_end_block = sell_start_block + 100;
     var unlock_time = 70000;
     var presale_amount = 20000000;
     var precirculation_amount = 3000;
@@ -173,7 +173,10 @@ contract('ThetaToken', function(accounts) {
         console.log('-------- Integration test: token purchase before sale starts --------');
         console.log('');
 
-        assert(web3.eth.blockNumber < sell_start_block);
+        current_block_number = web3.eth.blockNumber;
+        console.log('current block number: ' + web3.eth.blockNumber);
+        console.log('sell_start_block: ' + sell_start_block);
+        assert(current_block_number < sell_start_block);
 
        	purchase_eth = 1 * (10**18);
         return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
@@ -186,8 +189,8 @@ contract('ThetaToken', function(accounts) {
         		console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
         		console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
         		console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
-        		return web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
-        	})
+        		web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
+            })
         	.catch(function() {
         		console.log('>>> sending ETH did not succeed since sale not started yet, expected');
         	})
@@ -200,7 +203,7 @@ contract('ThetaToken', function(accounts) {
         		console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
         		console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
         		assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, 0, 'should not change!');
-        	})
+            })
     });
 
     it ("Integration test: token purchase after sale starts", function() {
@@ -234,8 +237,9 @@ contract('ThetaToken', function(accounts) {
         		console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
         		console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
         		console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
-        		return web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
-        	})
+        		tx_hash = web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
+        	    tx_gas_used = web3.eth.getTransactionReceipt(tx_hash).gasUsed * web3.eth.getTransaction(tx_hash).gasPrice;
+            })
         	.then(function() {
         		return theta_token.balanceOf(public_sale_addr);
         	})
@@ -245,8 +249,178 @@ contract('ThetaToken', function(accounts) {
         		console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
         		console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
         		assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, purchase_eth * exchange_rate, 'should decrease!');
-        	    assert(public_sale_addr_init_eth_balance - public_sale_addr_final_eth_balance >= purchase_eth, 'ETH balance should decrease at least by purchase_eth!');
+        	    assert.equal(Number(public_sale_addr_init_eth_balance),
+                             Number(public_sale_addr_final_eth_balance) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');
         	})
+    });
+
+    it ("Integration test: token purchase from non-whitelisted addresses after sale starts", function() {
+        console.log('');
+        console.log('-------- Integration test: token purchase from non-whitelisted addresses after sale starts --------');
+        console.log('');
+
+        assert(web3.eth.blockNumber > sell_start_block);
+
+        purchase_eth = 1 * (10**18);
+        return theta_token_sale.deleteAccountsFromWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
+            .then(function() {
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_init_theta_balance = theta_balance;
+                public_sale_addr_init_eth_balance = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
+                console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
+                return web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
+            })
+            .catch(function() {
+                console.log('>>> sending ETH did not succeed since the sender address is not whitelisted, expected');
+            })
+            .then(function() {
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_final_theta_balance = theta_balance;
+                public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
+                assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, 0, 'should decrease!');
+                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_final_eth_balance), 'Should cost some gas!');
+            })
+    });
+
+    it ("Integration test: token purchase with less than minially required ETH", function() {
+        console.log('');
+        console.log('-------- Integration test: token purchase with less than minially required ETH --------');
+        console.log('');
+
+        assert(web3.eth.blockNumber > sell_start_block);
+
+        purchase_eth = 100; // 100 wei, less than 1 szabo 
+        return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
+            .then(function() {
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_init_theta_balance = theta_balance;
+                public_sale_addr_init_eth_balance = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
+                console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
+                return web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
+            })
+            .catch(function() {
+                console.log('>>> sending ETH did not succeed since less than minially required ETH was sent, expected');
+            })
+            .then(function() {
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_final_theta_balance = theta_balance;
+                public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
+                assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, 0, 'should not change!');
+                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_final_eth_balance), 'Should cost some gas!');
+            })
+    });
+
+    it ("Integration test: token purchase when sold token count approaches the hard cap", function() {
+        console.log('');
+        console.log('-------- Integration test: token purchase when sold token count approaches the hard cap --------');
+        console.log('');
+        
+        assert(web3.eth.blockNumber > sell_start_block);
+
+        purchase_eth = 1 * (10**18); // 1 ether
+        return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
+            .then(function() {
+                return theta_token.totalSupply();
+            })
+            .then(function(supply) {
+                current_supply = Number(supply);
+                current_sold_tokens = current_supply * 40 / 100;
+                new_token_sale_hard_cap = current_sold_tokens + exchange_rate * purchase_eth / 2;
+                return theta_token_sale.changeTokenSaleHardCap(new_token_sale_hard_cap);
+            })
+            .then(function() {
+                return theta_token_sale.tokenSaleHardCap.call();
+            })
+            .then(function(token_hard_cap) {
+                new_token_sale_hard_cap = token_hard_cap;
+                console.log('new token sale hard cap: ' + Number(new_token_sale_hard_cap).toString());
+                new_fund_collected_hard_cap = (Number(new_token_sale_hard_cap) * 100) / exchange_rate; // make sure token sale hard cap is reached first
+                return theta_token_sale.changeFundCollectedHardCap(new_fund_collected_hard_cap);
+            })
+            .then(function() {
+                return theta_token_sale.fundCollectedHardCap.call();
+            })
+            .then(function(fund_hard_cap) {
+                console.log('new fund collected hard cap: ' + fund_hard_cap);
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_init_theta_balance = theta_balance;
+                public_sale_addr_init_eth_balance = web3.eth.getBalance(public_sale_addr);
+                console.log('');
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
+                console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
+                tx_hash = web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
+                tx_gas_used = web3.eth.getTransactionReceipt(tx_hash).gasUsed * web3.eth.getTransaction(tx_hash).gasPrice;
+            })
+            .then(function() {
+                console.log('>>> the first transaction succeeded, expected');
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_theta_balance_1 = theta_balance;
+                public_sale_addr_eth_balance_1 = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_1.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_1.toString());
+                assert.equal(public_sale_addr_theta_balance_1 - public_sale_addr_init_theta_balance, purchase_eth * exchange_rate, 'should increase!');
+                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_eth_balance_1) + Number(purchase_eth), 'should decrease!');
+                //assert.equal(Number(public_sale_addr_init_eth_balance),
+                //             Number(public_sale_addr_eth_balance_1) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');                return theta_token.totalSupply();
+                return theta_token.totalSupply();
+            })
+            .then(function(supply) {
+                current_supply = Number(supply);
+                current_sold_tokens = current_supply * 40 / 100;
+                console.log('');
+                console.log('number of tokens sold: ' + current_sold_tokens.toString());
+                return theta_token_sale.getFundCollected({from: admin_addr, gas: 4700000});
+            })
+            .then(function(fund_collected) {
+                console.log('fund collected: ' + fund_collected.toString());
+                console.log('');
+                console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
+                return web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
+            })
+            .catch(function() {
+                console.log('>>> the second transaction failed since the number of tokens sold reached the hard cap, expected');
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_theta_balance_2 = theta_balance;
+                public_sale_addr_eth_balance_2 = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_2.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_2.toString());
+                assert.equal(public_sale_addr_theta_balance_2 - public_sale_addr_theta_balance_1, 0, 'should not change!');
+                assert(Number(public_sale_addr_eth_balance_1) > Number(public_sale_addr_eth_balance_2), 'Should cost some gas!');
+                return theta_token.totalSupply();
+            })
+            .then(function(supply) {
+                current_supply = Number(supply);
+                current_sold_tokens = current_supply * 40 / 100;
+                console.log('')
+                console.log('total number of token sold: ' + current_sold_tokens.toString());
+                return theta_token_sale.getFundCollected({from: admin_addr, gas: 4700000});
+            })
+            .then(function(fund_collected) {
+                console.log('total fund collected: ' + fund_collected.toString());
+            })
     });
 
 });

@@ -183,14 +183,16 @@ contract ThetaTokenSale {
         internal {
 
         uint fundReceived = msg.value;
-        require(fundReceived <= fundCollectedHardCap.sub(fundCollected));
+        //require(fundReceived <= fundCollectedHardCap.sub(fundCollected));
+        require(fundCollected <= fundCollectedHardCap);
 
         // Calculate how many tokens bought
         uint boughtTokens = msg.value.mul(exchangeRate);
 
         // If past hard cap, throw
         uint tokenSoldAmount = token.totalSupply().mul(40).div(100); // 40% available for purchase
-        require((tokenSoldAmount <= tokenSaleHardCap) && (boughtTokens <= tokenSaleHardCap.sub(tokenSoldAmount)));
+        //require((tokenSoldAmount <= tokenSaleHardCap) && (boughtTokens <= tokenSaleHardCap.sub(tokenSoldAmount)));
+        require((tokenSoldAmount <= tokenSaleHardCap));
         require(whitelistMap[_owner]);
 
         // Send funds to fundDeposit
