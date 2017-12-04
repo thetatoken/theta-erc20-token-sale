@@ -95,8 +95,8 @@ contract('ThetaTokenSale', function(accounts) {
     it ("ThetaTokenSale: allocate presale tokens", function() {
         console.log('----------------');
         presale_receiver = accounts[6];
-        presale_amount = 543210;
-        theta_reserve_amount = presale_amount * 60 / 40;
+        presale_amount = new web3.BigNumber(543210);
+        theta_reserve_amount = presale_amount.times(60).div(40);
         return thetaTokenSale.getThetaLabsReserve()
             .then(function(res) {
                 theta_reserve_address = res;
@@ -105,13 +105,13 @@ contract('ThetaTokenSale', function(accounts) {
             })
             .then(function(balance) {
                 theta_reserve_previous_balance = balance;
-                console.log('Theta reserve previous balance : ' + theta_reserve_previous_balance);
+                console.log('Theta reserve previous balance : ' + theta_reserve_previous_balance.toString(10));
                 console.log('Presale receiver address : ' + presale_receiver);
                 return thetaToken.balanceOf(presale_receiver);
             })
             .then(function(balance) {
                 presale_receiver_previous_balance = balance;
-                console.log('Presale receiver previous balance : ' + presale_receiver_previous_balance);
+                console.log('Presale receiver previous balance : ' + presale_receiver_previous_balance.toString(10));
                 return thetaTokenSale.allocatePresaleTokens(presale_receiver, presale_amount, {from: accounts[1], gas: 4700000});
             })
             .then(function() {
@@ -119,14 +119,14 @@ contract('ThetaTokenSale', function(accounts) {
             })
             .then(function(balance) {
                 theta_reserve_current_balance = balance;
-                console.log('Theta reserve current balance : ' + theta_reserve_current_balance);
+                console.log('Theta reserve current balance : ' + theta_reserve_current_balance.toString(10));
                 return thetaToken.balanceOf(presale_receiver);
             })
             .then(function(balance) {
                 presale_receiver_current_balance = balance;
                 console.log('Presale receiver current balance : ' + presale_receiver_current_balance);
-                assert.equal(theta_reserve_current_balance - theta_reserve_previous_balance, theta_reserve_amount, 'theta reserver balance should increase by the expected amount');
-                assert.equal(presale_receiver_current_balance - presale_receiver_previous_balance, presale_amount, 'presale receiver balance should increase by pre-sale amount');
+                assert.equal(theta_reserve_current_balance.minus(theta_reserve_previous_balance).equals(theta_reserve_amount), true, 'theta reserver balance should increase by the expected amount');
+                assert.equal(presale_receiver_current_balance.minus(presale_receiver_previous_balance).equals(presale_amount), true, 'presale receiver balance should increase by pre-sale amount');
             });
     });
 
