@@ -9,7 +9,6 @@ contract('ThetaToken', function(accounts) {
     var fund_deposit_addr = accounts[5];
     var presale_addr = accounts[6];
     var token_recepient_address = accounts[7];
-    var streamer_addr = accounts[8];
     var public_sale_addr = accounts[9];
 
     var theta_token;
@@ -21,12 +20,9 @@ contract('ThetaToken', function(accounts) {
     var sell_end_block;
     var unlock_time_delta = 90; // current block + delta = unlock time
     var unlock_time;
-    var presale_amount = 20000000;
-    var precirculation_amount = 3000;
-    var donation_amount = 100;
-    var cashout_amount = 50;
-    var public_sale_amount = 3000000000000000000;  //3 ether
-    var token_transfer_amount = 2000000000000000000;
+    var presale_amount = new web3.BigNumber(20000000);
+    var public_sale_amount = new web3.BigNumber(3000000000000000000);  // 3 ether
+    var token_transfer_amount = new web3.BigNumber(2000000000000000000); // 2 ether
 
     console.log("Imported node Accounts: \n", accounts);
 
@@ -98,18 +94,18 @@ contract('ThetaToken', function(accounts) {
         return theta_token.balanceOf(thetalab_reserve_addr)
             .then(function(res) {
                 theta_reserve_token_balance_before_invest = res;
-                console.log('Token balance of theta reserve account before invest is ' + theta_reserve_token_balance_before_invest);
+                console.log('Token balance of theta reserve account before invest is ' + theta_reserve_token_balance_before_invest.toString(10));
                 return theta_token.balanceOf(public_sale_addr)
             })
             .then(function(res) {
                 public_sale_token_balance_before_invest = res;
-                console.log('Token balance of public sale account before invest is ' + public_sale_token_balance_before_invest);
+                console.log('Token balance of public sale account before invest is ' + public_sale_token_balance_before_invest.toString(10));
 
                 public_sale_eth_balance_before_invest  = web3.eth.getBalance(public_sale_addr);
-                console.log('Ether balance of public sale account before invest is ' + public_sale_eth_balance_before_invest);
+                console.log('Ether balance of public sale account before invest is ' + public_sale_eth_balance_before_invest.toString(10));
                 
                 fund_deposit_eth_balance_before_invest = web3.eth.getBalance(fund_deposit_addr);
-                console.log('Ether balance of fund deposit account before invest is  ' + fund_deposit_eth_balance_before_invest);
+                console.log('Ether balance of fund deposit account before invest is  ' + fund_deposit_eth_balance_before_invest.toString(10));
                 console.log('');
                 
                 public_sale_obj = {
@@ -118,7 +114,7 @@ contract('ThetaToken', function(accounts) {
                     value: public_sale_amount,
                     gas:4700000
                 }
-                console.log('Investing ' + public_sale_amount + ' wei from public_sale_addr ' + public_sale_addr + ' ...');
+                console.log('Investing ' + public_sale_amount.toString(10) + ' wei from public_sale_addr ' + public_sale_addr + ' ...');
                 invest_hash = web3.eth.sendTransaction(public_sale_obj);
                 console.log('Hash for invest transaction: ' + invest_hash);
                 invest_gas_used = web3.eth.getTransactionReceipt(invest_hash).gasUsed * web3.eth.getTransaction(invest_hash).gasPrice;
@@ -130,24 +126,24 @@ contract('ThetaToken', function(accounts) {
             .then (function(res) {
                 theta_reserve_token_balance_after_invest = res;
                 console.log('Token balance of theta reserve account after invest is ' + theta_reserve_token_balance_after_invest);
-                target_theta_reserve_token_balance_delta = public_sale_amount * exchange_rate * 60 / 40;
-                assert.equal(theta_reserve_token_balance_after_invest - theta_reserve_token_balance_before_invest, target_theta_reserve_token_balance_delta, 'incorrect theta reserve token balance');
+                target_theta_reserve_token_balance_delta = public_sale_amount.times(exchange_rate).times(60).div(40);
+                assert.equal(theta_reserve_token_balance_after_invest.minus(theta_reserve_token_balance_before_invest).equals(target_theta_reserve_token_balance_delta), true, 'incorrect theta reserve token balance');
                 
                 return theta_token.balanceOf(public_sale_addr);
             })
             .then(function(res) {
                 public_sale_token_balance_after_invest = res;
-                console.log('Token balance of public sale account after invest is ' + public_sale_token_balance_after_invest);
-                target_public_sale_token_balance_delta = public_sale_amount * exchange_rate;
-                assert.equal(public_sale_token_balance_after_invest - public_sale_token_balance_before_invest,  target_public_sale_token_balance_delta, 'incorrect public sale token balance');
+                console.log('Token balance of public sale account after invest is ' + public_sale_token_balance_after_invest.toString(10));
+                target_public_sale_token_balance_delta = public_sale_amount.times(exchange_rate);
+                assert.equal(public_sale_token_balance_after_invest.minus(public_sale_token_balance_before_invest).equals(target_public_sale_token_balance_delta), true, 'incorrect public sale token balance');
 
                 public_sale_eth_balance_after_invest  = web3.eth.getBalance(public_sale_addr);
-                console.log('Ether balance of public sale account after invest is ' + public_sale_eth_balance_after_invest);
-                assert.equal(Number(public_sale_eth_balance_before_invest), Number(public_sale_amount) + Number(invest_gas_used) + Number(public_sale_eth_balance_after_invest), 'incorrect public sale ether balance');
+                console.log('Ether balance of public sale account after invest is ' + public_sale_eth_balance_after_invest.toString(10));
+                assert.equal(public_sale_amount.plus(invest_gas_used).plus(public_sale_eth_balance_after_invest).equals(public_sale_eth_balance_before_invest), true, 'incorrect public sale ether balance');
                 
                 fund_deposit_eth_balance_after_invest = web3.eth.getBalance(fund_deposit_addr);
                 console.log('Ether balance of fund deposit account after invest is  ' + fund_deposit_eth_balance_after_invest);
-                assert.equal(Number(fund_deposit_eth_balance_before_invest), Number(fund_deposit_eth_balance_after_invest) - Number(public_sale_amount), 'incorrect fund deposit ether balance');
+                assert.equal(fund_deposit_eth_balance_after_invest.minus(public_sale_amount).equals(fund_deposit_eth_balance_before_invest), true, 'incorrect fund deposit ether balance');
             })
             ;
     });
@@ -203,12 +199,12 @@ contract('ThetaToken', function(accounts) {
             })
             .then(function(res) {
                 sliver_integration_token_balance_before_transfer = res;
-                console.log('Token balance of token recepient before transfer is  ' + sliver_integration_token_balance_before_transfer);
+                console.log('Token balance of token recepient before transfer is  ' + sliver_integration_token_balance_before_transfer.toString(10));
                 return theta_token.balanceOf(public_sale_addr);
             })
             .then(function(res) {
                 public_sale_token_balance_before_transfer = res;
-                console.log('Token balance of public sale address before transfer is ' + public_sale_token_balance_before_transfer);
+                console.log('Token balance of public sale address before transfer is ' + public_sale_token_balance_before_transfer.toString(10));
 
                 console.log('');
                 console.log('Transfer ' + token_transfer_amount + ' from public sale address to token recepient..');
@@ -221,15 +217,15 @@ contract('ThetaToken', function(accounts) {
             .then(function(res) {
                 console.log('');
                 sliver_integration_token_balance_after_transfer = res;
-                console.log('Token balance of token recepient after transfer is ' + sliver_integration_token_balance_after_transfer);
-                assert.equal(Number(sliver_integration_token_balance_before_transfer) + Number(token_transfer_amount), Number(sliver_integration_token_balance_after_transfer), 'incorrect token recepient token balance');
+                console.log('Token balance of token recepient after transfer is ' + sliver_integration_token_balance_after_transfer.toString(10));
+                assert.equal(sliver_integration_token_balance_before_transfer.plus(token_transfer_amount).equals(sliver_integration_token_balance_after_transfer), true, 'incorrect token recepient token balance');
 
                 return theta_token.balanceOf(public_sale_addr);
             })
             .then(function(res) {
                 public_sale_token_balance_after_transfer = res;
-                console.log('Token balance of public sale address after transfer is ' + public_sale_token_balance_after_transfer);
-                assert.equal(Number(public_sale_token_balance_before_transfer) - Number(token_transfer_amount), Number(public_sale_token_balance_after_transfer), 'incorrect public sale addr token balance');
+                console.log('Token balance of public sale address after transfer is ' + public_sale_token_balance_after_transfer.toString(10));
+                assert.equal(public_sale_token_balance_before_transfer.minus(token_transfer_amount).equals(public_sale_token_balance_after_transfer), true, 'incorrect public sale addr token balance');
             })
             ;
     });

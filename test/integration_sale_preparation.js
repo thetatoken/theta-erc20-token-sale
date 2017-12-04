@@ -18,10 +18,10 @@ contract('ThetaToken', function(accounts) {
     var sell_start_block = 120;
     var sell_end_block = 220;
     var unlock_time = 70000;
-    var presale_amount = 20000000;
-    var precirculation_amount = 3000;
-    var donation_amount = 100;
-    var cashout_amount = 50;
+    var presale_amount = new web3.BigNumber(20000000);
+    var precirculation_amount = new web3.BigNumber(3000);
+    var donation_amount = new web3.BigNumber(100);
+    var cashout_amount = new web3.BigNumber(50);
 
     console.log("Imported node Accounts: \n", accounts);
 
@@ -86,11 +86,11 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(res) {
-                console.log('Balance of presale account ' + presale_addr + ' is ' + res)
+                console.log('Balance of presale account ' + presale_addr + ' is ' + res.toString(10))
                 return theta_token.balanceOf(thetalab_reserve_addr);
             })
             .then(function(res) {
-                console.log('Balance of thetaLab reserve account ' + thetalab_reserve_addr + ' is ' + res)
+                console.log('Balance of thetaLab reserve account ' + thetalab_reserve_addr + ' is ' + res.toString(10))
             })
     });
 
@@ -116,24 +116,24 @@ contract('ThetaToken', function(accounts) {
         console.log('Before transfer:');
         return theta_token.balanceOf(thetalab_reserve_addr)
             .then(function(res) {
-                console.log('Theta reserve balance: ' + res);
+                console.log('Theta reserve balance: ' + res.toString(10));
                 return theta_token.balanceOf(sliver_integration_addr);
             })
             .then(function(res) {
-                console.log('Sliver integration account balance: ' + res)
+                console.log('Sliver integration account balance: ' + res.toString(10))
                 console.log('Transfering ' + precirculation_amount + ' from thetalab_reserve_addr ' + thetalab_reserve_addr + ' to sliver_integration_addr ' + sliver_integration_addr);
                 return theta_token.transfer(sliver_integration_addr, precirculation_amount, {from: thetalab_reserve_addr, gas: 4700000});
             })
-            .then(function(res) {
+            .then(function() {
                 console.log('After transfer:');
                 return theta_token.balanceOf(thetalab_reserve_addr);
             })
             .then(function(res) {
-                console.log('Theta reserve balance: ' + res);
+                console.log('Theta reserve balance: ' + res.toString(10));
                 return theta_token.balanceOf(sliver_integration_addr);
             })
             .then(function(res) {
-                console.log('Sliver integration account balance: ' + res);
+                console.log('Sliver integration account balance: ' + res.toString(10));
             })
     });
 
@@ -153,12 +153,12 @@ contract('ThetaToken', function(accounts) {
         console.log('Before transfer:');
         return theta_token.balanceOf(sliver_integration_addr)
             .then(function(res) {
-                console.log('Theta integration account balance: ' + res);
+                console.log('Theta integration account balance: ' + res.toString(10));
                 return theta_token.balanceOf(streamer_addr);
             })
             .then(function(res) {
-                console.log('Streamer account balance: ' + res);
-                console.log('Donating ' + donation_amount + ' from sliver_integration_addr ' + sliver_integration_addr + ' to streamer_addr ' + streamer_addr);
+                console.log('Streamer account balance: ' + res.toString(10));
+                console.log('Donating ' + donation_amount.toString(10) + ' from sliver_integration_addr ' + sliver_integration_addr + ' to streamer_addr ' + streamer_addr);
                 return theta_token.transfer(streamer_addr, donation_amount, {from: sliver_integration_addr, gas: 4700000});
             })
             .then(function(res) {
@@ -166,11 +166,11 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(sliver_integration_addr);
             })
             .then(function(res) {
-                console.log('Theta integration account balance: ' + res);
+                console.log('Theta integration account balance: ' + res.toString(10));
                 return theta_token.balanceOf(streamer_addr);
             })
             .then(function(res) {
-                console.log('Streamer account balance: ' + res);
+                console.log('Streamer account balance: ' + res.toString(10));
             })
     });
 
@@ -183,20 +183,20 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(streamer_addr);
             })
             .then(function(res) {
-                console.log('Streamer account balance: ' + res);
+                console.log('Streamer account balance: ' + res.toString(10));
                 console.log('Cashing out ' + cashout_amount + ' from streamer_addr ' + streamer_addr + ' to sliver_integration_addr ' + sliver_integration_addr);
                 return theta_token.transfer(sliver_integration_addr, cashout_amount, {from: streamer_addr, gas: 4700000});
             })
-            .then(function(res) {
+            .then(function() {
                 console.log('After transfer:');
                 return theta_token.balanceOf(sliver_integration_addr);
             })
             .then(function(res) {
-                console.log('Theta integration account balance: ' + res);
+                console.log('Theta integration account balance: ' + res.toString(10));
                 return theta_token.balanceOf(streamer_addr);
             })
             .then(function(res) {
-                console.log('Streamer account balance: ' + res);
+                console.log('Streamer account balance: ' + res.toString(10));
             })
     });
 
