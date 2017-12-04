@@ -72,7 +72,7 @@ contract('ThetaToken', function(accounts) {
     	console.log('');
         console.log('-------- ThetaToken: mint tokens through presale --------');
         console.log('');
-        presale_amount = 8888888800000000;
+        presale_amount = new web3.BigNumber(8888888800000000);
         supply_increase = (presale_amount / 40) * 100;
         return theta_token.totalSupply()
             .then(function(total_supply) {
@@ -132,7 +132,7 @@ contract('ThetaToken', function(accounts) {
         console.log('-------- ThetaToken: token transfer() before unlockTime --------');
         console.log('');
         far_future_unlock_time = 99999999999999999;
-        transfer_amount_1 = 1234;
+        transfer_amount_1 = new web3.BigNumber(1234);
         return theta_token_sale.changeUnlockTime(far_future_unlock_time, {from: admin_addr, gas: 4700000})
         	.then(function() {
         		return theta_token_sale.allowPrecirculation(presale_purchaser, {from: admin_addr, gas: 4700000});
@@ -165,8 +165,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_first_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-        		assert.equal(presale_purchaser_after_first_transfer - presale_purchaser_init_balance, -transfer_amount_1, 'should decrease by the transfer amount!');
-        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer - precirculation_allowed_addr_init_balance, transfer_amount_1, 'should increase by the transfer amount!');
+        		assert.equal(presale_purchaser_init_balance.minus(presale_purchaser_after_first_transfer).equals(transfer_amount_1), 'should decrease by the transfer amount!');
+        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer.minus(precirculation_allowed_addr_init_balance).equals(transfer_amount_1), 'should increase by the transfer amount!');
         	})
         	.then(function() {
         		// transferring more amount than the balance, should fail
@@ -189,8 +189,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_second_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-        		assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, 0, 'should not change!');
-        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, 0, 'should not change!');
+        		assert.equal(presale_purchaser_after_second_transfer.equals(presale_purchaser_after_first_transfer), true, 'should not change!');
+        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer.equals(precirculation_allowed_addr_balance_after_first_transfer), true, 'should not change!');
         	})
         	.then(function() {
         		console.log('');
@@ -221,8 +221,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_disallowed_addr_balance_after_third_transfer = balance;
         		console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-        		assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, 0 , 'should not change!');
-        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer - precirculation_disallowed_addr_init_balance, 0, 'should not change!');
+        		assert.equal(presale_purchaser_after_third_transfer.equals(presale_purchaser_after_second_transfer), true, 'should not change!');
+        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer.equals(precirculation_disallowed_addr_init_balance), true, 'should not change!');
         	})
     });
 
@@ -264,8 +264,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_first_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-        		assert.equal(presale_purchaser_after_first_transfer - presale_purchaser_init_balance, -transfer_amount_1, 'should decrease by the transfer amount!');
-        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer - precirculation_allowed_addr_init_balance, transfer_amount_1, 'should increase by the transfer amount!');
+        		assert.equal(presale_purchaser_init_balance.minus(presale_purchaser_after_first_transfer).equals(transfer_amount_1), true, 'should decrease by the transfer amount!');
+        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer.minus(precirculation_allowed_addr_init_balance).equals(transfer_amount_1), true, 'should increase by the transfer amount!');
         	})
         	.then(function() {
         		// transferring more amount than the balance, should fail
@@ -288,8 +288,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_second_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-        		assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, 0, 'should not change!');
-        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, 0, 'should not change!');
+        		assert.equal(presale_purchaser_after_second_transfer.equals(presale_purchaser_after_first_transfer), true, 'should not change!');
+        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer.equals(precirculation_allowed_addr_balance_after_first_transfer), true, 'should not change!');
         	})
         	.then(function() {
         		console.log('');
@@ -318,8 +318,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_disallowed_addr_balance_after_third_transfer = balance;
         		console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-        		assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, -transfer_amount_1 , 'should decrease by the transfer amount!');
-        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer - precirculation_disallowed_addr_init_balance, transfer_amount_1, 'should increase by the transfer amount!');
+        		assert.equal(presale_purchaser_after_second_transfer.minus(presale_purchaser_after_third_transfer).equals(transfer_amount_1), true, 'should decrease by the transfer amount!');
+        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer.minus(precirculation_disallowed_addr_init_balance).equals(transfer_amount_1), true, 'should increase by the transfer amount!');
         	})
     });
 
@@ -328,10 +328,10 @@ contract('ThetaToken', function(accounts) {
         console.log('-------- ThetaToken: token transferFrom() before unlockTime --------');
         console.log('');
         far_future_unlock_time = 99999999999999999;
-        transfer_amount_1 = 1234;
-        transfer_amount_2 = 355;
-        transfer_amount_3 = 100;        
-        allowance_amount = 1000;
+        transfer_amount_1 = new web3.BigNumber(1234);
+        transfer_amount_2 = new web3.BigNumber(355);
+        transfer_amount_3 = new web3.BigNumber(100);        
+        allowance_amount = new web3.BigNumber(1000);
         return theta_token_sale.changeUnlockTime(far_future_unlock_time, {from: admin_addr, gas: 4700000})
         	.then(function() {
         		return theta_token_sale.allowPrecirculation(presale_purchaser, {from: admin_addr, gas: 4700000});
@@ -378,8 +378,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_first_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-        	    assert.equal(presale_purchaser_after_first_transfer - presale_purchaser_init_balance, 0, 'should not change!');
-        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer - precirculation_allowed_addr_init_balance, 0, 'should not change!');
+        	    assert.equal(presale_purchaser_after_first_transfer.equals(presale_purchaser_init_balance), true, 'should not change!');
+        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer.equals(precirculation_allowed_addr_init_balance), true, 'should not change!');
         	})
         	.then(function() {
         		console.log('');
@@ -418,9 +418,9 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_second_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_second_transfer.toString());
-        	    assert.equal(allowance_amount - allowance_remaining, transfer_amount_2, 'should decrease by transfer amount!');
-        	    assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, -transfer_amount_2, 'should decrease by transfer amount!');
-        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, transfer_amount_2, 'should increase by transfer amount!');
+                assert.equal(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2), true, 'should decrease by transfer amount!');
+        	    assert.equal(presale_purchaser_after_first_transfer.minus(presale_purchaser_after_second_transfer).equals(transfer_amount_2), true, 'should decrease by transfer amount!');
+        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer.minus(precirculation_allowed_addr_balance_after_first_transfer).equals(transfer_amount_2), true, 'should increase by transfer amount!');
         	})
         	.then(function() {
         		console.log('');
@@ -465,9 +465,9 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_disallowed_addr_balance_after_third_transfer = balance;
         		console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-        	    assert.equal(allowance_amount - allowance_remaining, transfer_amount_2, 'should decrease by transfer amount!');
-        	    assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, 0, 'should not change!');
-        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer - precirculation_disallowed_addr_init_balance, 0, 'should not change!');
+        	    assert.equal(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2), true, 'should decrease by transfer amount!');
+        	    assert.equal(presale_purchaser_after_third_transfer.equals(presale_purchaser_after_second_transfer), true, 'should not change!');
+        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer.equals(precirculation_disallowed_addr_init_balance), true, 'should not change!');
         	})
     });
 
@@ -476,11 +476,11 @@ contract('ThetaToken', function(accounts) {
         console.log('-------- ThetaToken: token transferFrom() after unlockTime --------');
         console.log('');
         past_unlock_time = 0;
-        transfer_amount_1 = 1234;
-        transfer_amount_2 = 355;
-        transfer_amount_3 = 100;
-        attacker_transfer_amount = 10;        
-        allowance_amount = 1000;
+        transfer_amount_1 = new web3.BigNumber(1234);
+        transfer_amount_2 = new web3.BigNumber(355);
+        transfer_amount_3 = new web3.BigNumber(100);
+        attacker_transfer_amount = new web3.BigNumber(10);
+        allowance_amount = new web3.BigNumber(1000);
         return theta_token_sale.changeUnlockTime(past_unlock_time, {from: admin_addr, gas: 4700000})
         	.then(function() {
         		return theta_token_sale.allowPrecirculation(presale_purchaser, {from: admin_addr, gas: 4700000});
@@ -530,8 +530,8 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_first_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-        	    assert.equal(presale_purchaser_after_first_transfer - presale_purchaser_init_balance, 0, 'should not change!');
-        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer - precirculation_allowed_addr_init_balance, 0, 'should not change!');
+        	    assert.equal(presale_purchaser_after_first_transfer.minus(presale_purchaser_init_balance), 0, 'should not change!');
+        		assert.equal(precirculation_allowed_addr_balance_after_first_transfer.minus(precirculation_allowed_addr_init_balance), 0, 'should not change!');
         	})
         	.then(function() {
         		console.log('');
@@ -570,9 +570,9 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_allowed_addr_balance_after_second_transfer = balance;
         		console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_second_transfer.toString());
-        	    assert.equal(allowance_amount - allowance_remaining, transfer_amount_2, 'should decrease by transfer amount!');
-        	    assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, -transfer_amount_2, 'should decrease by transfer amount!');
-        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, transfer_amount_2, 'should increase by transfer amount!');
+        	    assert.equal(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2), true, 'should decrease by transfer amount!');
+        	    assert.equal(presale_purchaser_after_first_transfer.minus(presale_purchaser_after_second_transfer).equals(transfer_amount_2), true,'should decrease by transfer amount!');
+        		assert.equal(precirculation_allowed_addr_balance_after_second_transfer.minus(precirculation_allowed_addr_balance_after_first_transfer).equals(transfer_amount_2), true, 'should increase by transfer amount!');
         	})
         	.then(function() {
         		console.log('');
@@ -615,9 +615,9 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		precirculation_disallowed_addr_balance_after_third_transfer = balance;
         		console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-        	    assert.equal(allowance_amount - allowance_remaining, transfer_amount_2 + transfer_amount_3, 'should decrease by the total transfer amount!');
-        	    assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, -transfer_amount_3, 'should decrease by transfer amount!');
-        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer - precirculation_disallowed_addr_init_balance, transfer_amount_3, 'should decrease by transfer amount!');
+        	    assert.equal(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2.plus(transfer_amount_3)), true, 'should decrease by the total transfer amount!');
+        	    assert.equal(presale_purchaser_after_second_transfer.minus(presale_purchaser_after_third_transfer).equals(transfer_amount_3), true, 'should decrease by transfer amount!');
+        		assert.equal(precirculation_disallowed_addr_balance_after_third_transfer.minus(precirculation_disallowed_addr_init_balance).equals(transfer_amount_3), true, 'should decrease by transfer amount!');
         	})
         	.then(function() {
         		console.log('');
@@ -662,11 +662,10 @@ contract('ThetaToken', function(accounts) {
         	.then(function(balance) {
         		attacker_balance_after_fourth_transfer = balance;
         		console.log('attacker balance: ' + attacker_balance_after_fourth_transfer.toString());
-        	    assert.equal(allowance_amount - allowance_remaining, transfer_amount_2 + transfer_amount_3, 'should decrease by the total transfer amount!');
-        	    assert.equal(presale_purchaser_after_fourth_transfer - presale_purchaser_after_third_transfer, 0, 'should not change!');
-        		assert.equal(attacker_balance_after_fourth_transfer - attacker_init_balance, 0, 'should not change!');
+        	    assert.equal(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2.plus(transfer_amount_3)), true, 'should decrease by the total transfer amount!');
+        	    assert.equal(presale_purchaser_after_fourth_transfer.equals(presale_purchaser_after_third_transfer), true, 'should not change!');
+        		assert.equal(attacker_balance_after_fourth_transfer.equals(attacker_init_balance), true, 'should not change!');
         	})
-
     });
 
 });
