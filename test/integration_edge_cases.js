@@ -15,14 +15,14 @@ contract('ThetaToken', function(accounts) {
 
     var theta_token;
     var theta_token_sale;
-    var exchange_rate = 3000;
+    var exchange_rate = 3547;
     var sale_start_block = web3.eth.blockNumber + 25;
     var sale_end_block = sale_start_block + 50;
     var unlock_time = sale_end_block + 25;
-    var presale_amount = 20000000;
-    var precirculation_amount = 3000;
-    var donation_amount = 100;
-    var cashout_amount = 50;
+    var presale_amount = 258200823 * (10 ** 18);
+    var precirculation_amount = 1892000 * (10 ** 18);
+    var donation_amount = 100 ** 18;
+    var cashout_amount = 50 * (10 ** 18);
 
     console.log("Imported node Accounts: \n", accounts);
 
@@ -206,25 +206,28 @@ contract('ThetaToken', function(accounts) {
             })
     });
 
-    it ("Integration test: special account balance checks #1", function() {
+    it ("Integration test: special account balance checks #3", function() {
         console.log('');
-        console.log('-------- Integration test: special account balance checks #1 --------');
+        console.log('-------- Integration test: special account balance checks #3 --------');
         console.log('');
 
         return theta_token.totalSupply()
             .then(function(supply) {
-                current_supply = Number(supply);
+                current_supply = new web3.BigNumber(supply);
                 return theta_token.balanceOf(thetalab_reserve_addr);
             })
             .then(function(thetalab_balance) {
-                thetalab_reserve_balance = Number(thetalab_balance);
-                EPSILON = precirculation_amount + 1;
-                console.log('current total token supply: ' + current_supply);
-                console.log('Theta Labs reserve balance: ' + thetalab_reserve_balance);
-                console.log('reserve ratio: ' + thetalab_reserve_balance / current_supply);
+                thetalab_reserve_balance = new web3.BigNumber(thetalab_balance);
+                EPSILON = new web3.BigNumber(10);
+                precirc_amount = new web3.BigNumber(precirculation_amount);
+                console.log('current total token supply. : ' + current_supply);
+                console.log('Theta Labs reserve balance  : ' + thetalab_reserve_balance);
+                console.log('pre-circulation total amount: ' + precirculation_amount);
 
-                assert(current_supply * 0.6 - thetalab_reserve_balance < EPSILON,  'invalid thetalab_reserve_balance ratio');
-                assert(current_supply * 0.6 - thetalab_reserve_balance > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
+                console.log('reserve ratio: ' + thetalab_reserve_balance.plus(precirculation_amount).dividedBy(current_supply));
+
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) < +EPSILON,  'invalid thetalab_reserve_balance ratio');
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
             })
     });
 
@@ -247,6 +250,12 @@ contract('ThetaToken', function(accounts) {
 
        	purchase_eth = 0.1 * (10**18);
         return theta_token_sale.activateSale({from: admin_addr, gas: 4700000})
+            .then(function() {
+                return theta_token_sale.changeTokenSaleHardCap(presale_amount + purchase_eth * exchange_rate * 10000);
+            })
+            .then(function() {
+                return theta_token_sale.changeFundCollectedHardCap(purchase_eth * 10000);
+            })
         	.then(function() {
         		return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000});	
         	})
@@ -254,8 +263,8 @@ contract('ThetaToken', function(accounts) {
         		return theta_token.balanceOf(public_sale_addr);
         	})
         	.then(function(theta_balance) {
-        		public_sale_addr_init_theta_balance = theta_balance;
-        		public_sale_addr_init_eth_balance = web3.eth.getBalance(public_sale_addr);
+        		public_sale_addr_init_theta_balance = new web3.BigNumber(theta_balance);
+        		public_sale_addr_init_eth_balance = new web3.BigNumber(web3.eth.getBalance(public_sale_addr));
         		console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
         		console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
         		console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
@@ -266,14 +275,38 @@ contract('ThetaToken', function(accounts) {
         		return theta_token.balanceOf(public_sale_addr);
         	})
         	.then(function(theta_balance) {
-        		public_sale_addr_final_theta_balance = theta_balance;
-        		public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
+        		public_sale_addr_final_theta_balance = new web3.BigNumber(theta_balance);
+        		public_sale_addr_final_eth_balance = new web3.BigNumber(web3.eth.getBalance(public_sale_addr));
         		console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
         		console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
-        		assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, purchase_eth * exchange_rate, 'should decrease!');
-        	    assert.equal(Number(public_sale_addr_init_eth_balance),
-                             Number(public_sale_addr_final_eth_balance) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');
+        		assert(public_sale_addr_final_theta_balance.minus(public_sale_addr_init_theta_balance).equals(purchase_eth * exchange_rate), 'should decrease!');
+        	    assert(public_sale_addr_final_eth_balance.plus(purchase_eth).plus(tx_gas_used).equals(public_sale_addr_init_eth_balance), 'ETH balance should decrease by the expected amount!');
         	})
+    });
+
+    it ("Integration test: special account balance checks #2", function() {
+        console.log('');
+        console.log('-------- Integration test: special account balance checks #2 --------');
+        console.log('');
+
+        return theta_token.totalSupply()
+            .then(function(supply) {
+                current_supply = new web3.BigNumber(supply);
+                return theta_token.balanceOf(thetalab_reserve_addr);
+            })
+            .then(function(thetalab_balance) {
+                thetalab_reserve_balance = new web3.BigNumber(thetalab_balance);
+                EPSILON = new web3.BigNumber(10);
+                precirc_amount = new web3.BigNumber(precirculation_amount);
+                console.log('current total token supply. : ' + current_supply);
+                console.log('Theta Labs reserve balance  : ' + thetalab_reserve_balance);
+                console.log('pre-circulation total amount: ' + precirculation_amount);
+
+                console.log('reserve ratio: ' + thetalab_reserve_balance.plus(precirculation_amount).dividedBy(current_supply));
+
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) < +EPSILON,  'invalid thetalab_reserve_balance ratio');
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
+            })
     });
 
     it ("Integration test: token purchase from non-whitelisted addresses after sale starts", function() {
@@ -309,6 +342,31 @@ contract('ThetaToken', function(accounts) {
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
                 assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, 0, 'should decrease!');
                 assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_final_eth_balance), 'Should cost some gas!');
+            })
+    });
+
+    it ("Integration test: special account balance checks #3", function() {
+        console.log('');
+        console.log('-------- Integration test: special account balance checks #3 --------');
+        console.log('');
+
+        return theta_token.totalSupply()
+            .then(function(supply) {
+                current_supply = new web3.BigNumber(supply);
+                return theta_token.balanceOf(thetalab_reserve_addr);
+            })
+            .then(function(thetalab_balance) {
+                thetalab_reserve_balance = new web3.BigNumber(thetalab_balance);
+                EPSILON = new web3.BigNumber(10);
+                precirc_amount = new web3.BigNumber(precirculation_amount);
+                console.log('current total token supply. : ' + current_supply);
+                console.log('Theta Labs reserve balance  : ' + thetalab_reserve_balance);
+                console.log('pre-circulation total amount: ' + precirculation_amount);
+
+                console.log('reserve ratio: ' + thetalab_reserve_balance.plus(precirculation_amount).dividedBy(current_supply));
+
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) < +EPSILON,  'invalid thetalab_reserve_balance ratio');
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
             })
     });
 
@@ -473,7 +531,7 @@ contract('ThetaToken', function(accounts) {
             })
             .then(function() {
                 // make sure fund hard cap reached first
-                new_token_sale_hard_cap = Number(new_fund_collected_hard_cap) + purchase_eth * exchange_rate * 1000;
+                new_token_sale_hard_cap = (Number(new_fund_collected_hard_cap) + purchase_eth * 1000) * exchange_rate;
                 return theta_token_sale.changeTokenSaleHardCap(new_token_sale_hard_cap, {from: admin_addr, gas: 4700000});
             })
             .then(function() {
@@ -546,25 +604,28 @@ contract('ThetaToken', function(accounts) {
             })
     });
 
-    it ("Integration test: special account balance checks #2", function() {
+    it ("Integration test: special account balance checks #4", function() {
         console.log('');
-        console.log('-------- Integration test: special account balance checks #2 --------');
+        console.log('-------- Integration test: special account balance checks #4 --------');
         console.log('');
 
         return theta_token.totalSupply()
             .then(function(supply) {
-                current_supply = Number(supply);
+                current_supply = new web3.BigNumber(supply);
                 return theta_token.balanceOf(thetalab_reserve_addr);
             })
             .then(function(thetalab_balance) {
-                thetalab_reserve_balance = Number(thetalab_balance);
-                EPSILON = 1000;
-                console.log('current total token supply: ' + current_supply);
-                console.log('Theta Labs reserve balance: ' + thetalab_reserve_balance);
-                console.log('reserve ratio: ' + thetalab_reserve_balance / current_supply);
+                thetalab_reserve_balance = new web3.BigNumber(thetalab_balance);
+                EPSILON = new web3.BigNumber(10);
+                precirc_amount = new web3.BigNumber(precirculation_amount);
+                console.log('current total token supply. : ' + current_supply);
+                console.log('Theta Labs reserve balance  : ' + thetalab_reserve_balance);
+                console.log('pre-circulation total amount: ' + precirculation_amount);
 
-                assert(current_supply * 0.6 - thetalab_reserve_balance < EPSILON,  'invalid thetalab_reserve_balance ratio');
-                assert(current_supply * 0.6 - thetalab_reserve_balance > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
+                console.log('reserve ratio: ' + thetalab_reserve_balance.plus(precirculation_amount).dividedBy(current_supply));
+
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) < +EPSILON,  'invalid thetalab_reserve_balance ratio');
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
             })
     });
 
@@ -810,7 +871,7 @@ contract('ThetaToken', function(accounts) {
                     {from: transfer_operator, gas: 4700000});
             })
             .catch(function() {
-                console.log('>>> transferFrom() did not succeed since the amount is higher than the blance, expected');
+                console.log('>>> transferFrom() did not succeed since the amount is higher than the allowance, expected');
             })
             .then(function() {
                 return theta_token.balanceOf(presale_addr);
@@ -1009,15 +1070,18 @@ contract('ThetaToken', function(accounts) {
                 return theta_token_sale.allowPrecirculation(precirculation_allowed_addr, {from: admin_addr, gas: 4700000});
             })
             .then(function() {
+                return theta_token_sale.disallowPrecirculation(precirculation_disallowed_addr, {from: admin_addr, gas: 4700000});
+            })
+            .then(function() {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_init_balance = balance;
+                presale_purchaser_init_balance = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_init_balance.toString());
                 return theta_token.balanceOf(precirculation_allowed_addr);
             })
             .then(function(balance) {
-                precirculation_allowed_addr_init_balance = balance;
+                precirculation_allowed_addr_init_balance = new web3.BigNumber(balance);
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_init_balance.toString());
                 console.log('>>> transferring ' + transfer_amount_1.toString() + ' tokens ...')
                 return theta_token.transfer(precirculation_allowed_addr, transfer_amount_1, {from: presale_addr, gas: 4700000})
@@ -1026,15 +1090,15 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_first_transfer = balance;
+                presale_purchaser_after_first_transfer = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_after_first_transfer.toString());
                 return theta_token.balanceOf(precirculation_allowed_addr);
             })
             .then(function(balance) {
-                precirculation_allowed_addr_balance_after_first_transfer = balance;
+                precirculation_allowed_addr_balance_after_first_transfer = new web3.BigNumber(balance);
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-                assert.equal(presale_purchaser_after_first_transfer - presale_purchaser_init_balance, -transfer_amount_1, 'should decrease by the transfer amount!');
-                assert.equal(precirculation_allowed_addr_balance_after_first_transfer - precirculation_allowed_addr_init_balance, transfer_amount_1, 'should increase by the transfer amount!');
+                assert(presale_purchaser_after_first_transfer.minus(presale_purchaser_init_balance).equals(-transfer_amount_1), 'should decrease by the transfer amount!');
+                assert(precirculation_allowed_addr_balance_after_first_transfer.minus(precirculation_allowed_addr_init_balance).equals(transfer_amount_1), 'should increase by the transfer amount!');
             })
             .then(function() {
                 // transferring more amount than the balance, should fail
@@ -1050,27 +1114,27 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_second_transfer = balance;
-                console.log('presale purchase balance: ' + presale_purchaser_after_first_transfer.toString());
+                presale_purchaser_after_second_transfer = new web3.BigNumber(balance);
+                console.log('presale purchase balance: ' + presale_purchaser_after_second_transfer.toString());
                 return theta_token.balanceOf(precirculation_allowed_addr);
             })
             .then(function(balance) {
-                precirculation_allowed_addr_balance_after_second_transfer = balance;
+                precirculation_allowed_addr_balance_after_second_transfer = new web3.BigNumber(balance);
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-                assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, 0, 'should not change!');
-                assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, 0, 'should not change!');
+                assert(presale_purchaser_after_second_transfer.minus(presale_purchaser_after_first_transfer).equals(0), 'should not change!');
+                assert(precirculation_allowed_addr_balance_after_second_transfer.minus(precirculation_allowed_addr_balance_after_first_transfer).equals(0), 'should not change!');
             })
             .then(function() {
                 console.log('');
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_third_transfer = balance;
+                presale_purchaser_after_third_transfer = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_after_first_transfer.toString());
                 return theta_token.balanceOf(precirculation_disallowed_addr);
             })
             .then(function(balance) {
-                precirculation_disallowed_addr_init_balance = balance;
+                precirculation_disallowed_addr_init_balance = new web3.BigNumber(balance);
                 console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_init_balance.toString());
                 console.log('>>> transferring ' + transfer_amount_1.toString() + ' tokens to precirculation disallowed address...')
                 return theta_token.transfer(precirculation_disallowed_addr, transfer_amount_1, {from: presale_addr, gas: 4700000})
@@ -1080,15 +1144,15 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_third_transfer = balance;
+                presale_purchaser_after_third_transfer = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_after_third_transfer.toString());
                 return theta_token.balanceOf(precirculation_disallowed_addr);
             })
             .then(function(balance) {
-                precirculation_disallowed_addr_balance_after_third_transfer = balance;
+                precirculation_disallowed_addr_balance_after_third_transfer = new web3.BigNumber(balance);
                 console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-                assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, -transfer_amount_1 , 'should decrease by the transfer amount!');
-                assert.equal(Number(precirculation_disallowed_addr_balance_after_third_transfer), Number(precirculation_disallowed_addr_init_balance) + Number(transfer_amount_1), 'should increase by the transfer amount!');
+                assert(presale_purchaser_after_third_transfer.minus(presale_purchaser_after_second_transfer).equals(-transfer_amount_1) , 'should decrease by the transfer amount!');
+                assert(precirculation_disallowed_addr_balance_after_third_transfer.minus(precirculation_disallowed_addr_init_balance).equals(transfer_amount_1), 'should increase by the transfer amount!');
             })
     });
 
@@ -1108,6 +1172,9 @@ contract('ThetaToken', function(accounts) {
         return theta_token_sale.allowPrecirculation(presale_addr, {from: admin_addr, gas: 4700000})
             .then(function() {
                 return theta_token_sale.allowPrecirculation(precirculation_allowed_addr, {from: admin_addr, gas: 4700000});
+            })
+            .then(function() {
+                return theta_token_sale.disallowPrecirculation(precirculation_disallowed_addr, {from: admin_addr, gas: 4700000});
             })
             .then(function() {
                 return theta_token.approve(transfer_operator, 0, {from: presale_addr, gas: 4700000});
@@ -1138,7 +1205,7 @@ contract('ThetaToken', function(accounts) {
                     {from: transfer_operator, gas: 4700000});
             })
             .catch(function() {
-                console.log('>>> transferFrom() did not succeed since the amount is higher than the blance, expected');
+                console.log('>>> transferFrom() did not succeed since the amount is higher than the allowance, expected');
             })
             .then(function() {
                 return theta_token.balanceOf(presale_addr);
@@ -1164,12 +1231,12 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_first_transfer = balance;
+                presale_purchaser_after_first_transfer = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_after_first_transfer.toString());
                 return theta_token.balanceOf(precirculation_allowed_addr);
             })
             .then(function(balance) {
-                precirculation_allowed_addr_balance_after_first_transfer = balance;
+                precirculation_allowed_addr_balance_after_first_transfer = new web3.BigNumber(balance);
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
                 console.log('>>> using transferFrom() to transfer ' + transfer_amount_2.toString() + ' tokens...');
                 return theta_token.transferFrom(presale_addr, precirculation_allowed_addr, transfer_amount_2, 
@@ -1184,16 +1251,16 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_second_transfer = balance;
+                presale_purchaser_after_second_transfer = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_after_second_transfer.toString());
                 return theta_token.balanceOf(precirculation_allowed_addr);
             })
             .then(function(balance) {
-                precirculation_allowed_addr_balance_after_second_transfer = balance;
+                precirculation_allowed_addr_balance_after_second_transfer = new web3.BigNumber(balance);
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_second_transfer.toString());
                 assert.equal(allowance_amount - allowance_remaining, transfer_amount_2, 'should decrease by transfer amount!');
-                assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, -transfer_amount_2, 'should decrease by transfer amount!');
-                assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, transfer_amount_2, 'should increase by transfer amount!');
+                assert(presale_purchaser_after_second_transfer.minus(presale_purchaser_after_first_transfer).equals(-transfer_amount_2), 'should decrease by transfer amount!');
+                assert(precirculation_allowed_addr_balance_after_second_transfer.minus(precirculation_allowed_addr_balance_after_first_transfer).equals(transfer_amount_2), 'should increase by transfer amount!');
             })
             .then(function() {
                 console.log('');
@@ -1208,12 +1275,12 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_second_transfer = balance;
+                presale_purchaser_after_second_transfer = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_after_second_transfer.toString());
                 return theta_token.balanceOf(precirculation_disallowed_addr);
             })
             .then(function(balance) {
-                precirculation_disallowed_addr_init_balance = balance;
+                precirculation_disallowed_addr_init_balance = new web3.BigNumber(balance);
                 console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_init_balance.toString());
                 console.log('>>> using transferFrom() to transfer ' + transfer_amount_3.toString() + ' tokens...');
                 return theta_token.transferFrom(presale_addr, precirculation_disallowed_addr, transfer_amount_3, 
@@ -1229,38 +1296,41 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(presale_addr);
             })
             .then(function(balance) {
-                presale_purchaser_after_third_transfer = balance;
+                presale_purchaser_after_third_transfer = new web3.BigNumber(balance);
                 console.log('presale purchase balance: ' + presale_purchaser_after_third_transfer.toString());
                 return theta_token.balanceOf(precirculation_disallowed_addr);
             })
             .then(function(balance) {
-                precirculation_disallowed_addr_balance_after_third_transfer = balance;
+                precirculation_disallowed_addr_balance_after_third_transfer = new web3.BigNumber(balance);
                 console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
                 assert.equal(allowance_amount - allowance_remaining, transfer_amount_2 + transfer_amount_3, 'should decrease by the total transfer amount!');
-                assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, -transfer_amount_3, 'should decrease by transfer amount!');
-                assert.equal(Number(precirculation_disallowed_addr_balance_after_third_transfer), Number(precirculation_disallowed_addr_init_balance) + Number(transfer_amount_3), 'should decrease by transfer amount!');
+                assert(presale_purchaser_after_third_transfer.minus(presale_purchaser_after_second_transfer).equals(-transfer_amount_3), 'should decrease by transfer amount!');
+                assert(precirculation_disallowed_addr_balance_after_third_transfer.minus(precirculation_disallowed_addr_init_balance).equals(transfer_amount_3), 'should decrease by transfer amount!');
             })
     });
 
-    it ("Integration test: special account balance checks #3", function() {
+    it ("Integration test: special account balance checks #5", function() {
         console.log('');
-        console.log('-------- Integration test: special account balance checks #3 --------');
+        console.log('-------- Integration test: special account balance checks #5 --------');
         console.log('');
 
         return theta_token.totalSupply()
             .then(function(supply) {
-                current_supply = Number(supply);
+                current_supply = new web3.BigNumber(supply);
                 return theta_token.balanceOf(thetalab_reserve_addr);
             })
             .then(function(thetalab_balance) {
-                thetalab_reserve_balance = Number(thetalab_balance);
-                EPSILON = 1000;
-                console.log('current total token supply: ' + current_supply);
-                console.log('Theta Labs reserve balance: ' + thetalab_reserve_balance);
-                console.log('reserve ratio: ' + thetalab_reserve_balance / current_supply);
+                thetalab_reserve_balance = new web3.BigNumber(thetalab_balance);
+                EPSILON = new web3.BigNumber(10);
+                precirc_amount = new web3.BigNumber(precirculation_amount);
+                console.log('current total token supply. : ' + current_supply);
+                console.log('Theta Labs reserve balance  : ' + thetalab_reserve_balance);
+                console.log('pre-circulation total amount: ' + precirculation_amount);
 
-                assert(current_supply * 0.6 - thetalab_reserve_balance < EPSILON,  'invalid thetalab_reserve_balance ratio');
-                assert(current_supply * 0.6 - thetalab_reserve_balance > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
+                console.log('reserve ratio: ' + thetalab_reserve_balance.plus(precirculation_amount).dividedBy(current_supply));
+
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) < +EPSILON,  'invalid thetalab_reserve_balance ratio');
+                assert(current_supply.times(0.6).minus(thetalab_reserve_balance).minus(precirc_amount) > -EPSILON, 'invalid thetalab_reserve_balance ratio');                
             })
     });
 
