@@ -60,11 +60,6 @@ contract ThetaToken is StandardToken, Controlled {
     }
 
     function mint(address _owner, uint _amount) external only_controller returns (bool) {
-        require(totalSupply + _amount >= totalSupply);
-        
-        uint previousBalance = balances[_owner];
-        require(previousBalance + _amount >= previousBalance);
-
         totalSupply = totalSupply.add(_amount);
         balances[_owner] = balances[_owner].add(_amount);
 

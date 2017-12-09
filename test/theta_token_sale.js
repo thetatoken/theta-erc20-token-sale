@@ -212,18 +212,10 @@ contract('ThetaTokenSale', function(accounts) {
             .then(function(res) {
                 whitelist_controller = res;
                 console.log('Current whitelist controller: ' + whitelist_controller);
-                return thetaTokenSale.getWhitelist();
-            })
-            .then(function(res) {
-                console.log('Current whitelist: ' + res);
                 console.log('Adding these accounts to whitelist: ' + accounts[6] + ' ' + accounts[7]);
                 return thetaTokenSale.addAccountsToWhitelist([accounts[6], accounts[7]], {from: whitelist_controller, gas:4700000});
             })
             .then(function() {
-                return thetaTokenSale.getWhitelist();
-            })
-            .then(function(res) {
-                console.log('Whitelist after adding addresses to whitelist: ' + res);
                 return thetaTokenSale.isWhitelisted(accounts[6]);
             })
             .then(function(res) {
@@ -238,10 +230,6 @@ contract('ThetaTokenSale', function(accounts) {
                 return thetaTokenSale.deleteAccountsFromWhitelist([accounts[6], accounts[7]], {from: whitelist_controller, gas:4700000});
             })
            .then(function() {
-                return thetaTokenSale.getWhitelist();
-            })
-            .then(function(res) {
-                console.log('Whitelist after removing addresses from whitelist: ' + res);
                 return thetaTokenSale.isWhitelisted(accounts[6]);
             })
             .then(function(res) {
@@ -469,18 +457,10 @@ contract('ThetaTokenSale', function(accounts) {
     it ("ThetaTokenSale: test new whitelist controller", function() {
         console.log('----------------');
         console.log('Use new whitelistController to whitelist');
-        return thetaTokenSale.getWhitelist()
-            .then(function(res) {
-                console.log('Current whitelist: ' + res);
-                console.log('Adding these accounts to whitelist: ' + accounts[8] + ' ' + accounts[9]);
-                new_whitelist_controller = accounts[2];
-                return thetaTokenSale.addAccountsToWhitelist([accounts[8], accounts[9]], {from: accounts[2], gas:4700000});
-            })
+        console.log('Adding these accounts to whitelist: ' + accounts[8] + ' ' + accounts[9]);
+        new_whitelist_controller = accounts[2];
+        return thetaTokenSale.addAccountsToWhitelist([accounts[8], accounts[9]], {from: accounts[2], gas:4700000})
             .then(function() {
-                return thetaTokenSale.getWhitelist();
-            })
-            .then(function(res) {
-                console.log('Whitelist after adding addresses to whitelist: ' + res);
                 return thetaTokenSale.isWhitelisted(accounts[8]);
             })
             .then(function(res) {

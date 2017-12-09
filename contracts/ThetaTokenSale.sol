@@ -30,7 +30,6 @@ contract ThetaTokenSale {
     uint public finalBlock;               // Block number indicating when the sale ends. Exclusive, sale will be closed at ends block.
 
     mapping (address => bool) public whitelistMap; // Only the accounts in white list can buy theta tokens
-    address[] public whitelist;                    // whitelist
 
     uint public exchangeRate;                      // Exchange rate between 1 wei-Theta and 1 wei-Ether (18 decimals)
 
@@ -45,6 +44,11 @@ contract ThetaTokenSale {
     uint constant public dust = 1 szabo;           // Minimum investment
     uint public tokenSaleHardCap = 30 * (10**6) * (10**decimals); // Token sale hardcap
     uint public fundCollectedHardCap = 25000 * (10**18); // max ETH collected
+
+    event Whitelist(address addr);
+
+    event RemoveFromWhitelist(address addr);
+
 
     function ThetaTokenSale(
         address _root,
@@ -79,7 +83,6 @@ contract ThetaTokenSale {
         initialBlock = _initialBlock;
         finalBlock = _finalBlock;
         exchangeRate = _exchangeRate;
-        whitelist.length = 0;
     }
 
     function setThetaToken(address _token)
@@ -134,10 +137,6 @@ contract ThetaTokenSale {
         require(token.mint(_recipient, _amount));
     }
 
-    function getWhitelist() constant public returns (address[]) {
-        return whitelist;
-    }
-
     function isWhitelisted(address account) constant public returns (bool) {
         return whitelistMap[account];
     }
@@ -149,9 +148,8 @@ contract ThetaTokenSale {
             if (whitelistMap[account]) {
                 continue;
             }
-            
-            whitelist.push(account);
             whitelistMap[account] = true;
+            Whitelist(account);
         }
     }
  
@@ -159,11 +157,7 @@ contract ThetaTokenSale {
         for (uint i = 0; i < _accounts.length; i ++) {
             address account = _accounts[i];
             whitelistMap[account] = false;
-            for (uint j = 0; j < whitelist.length; j ++) {
-                if (account == whitelist[j]) {
-                    delete whitelist[j];
-                }
-            }
+            RemoveFromWhitelist(account);
         }
     }
 
@@ -183,7 +177,6 @@ contract ThetaTokenSale {
         internal {
 
         uint fundReceived = msg.value;
-        //require(fundReceived <= fundCollectedHardCap.sub(fundCollected));
         require(fundCollected <= fundCollectedHardCap);
 
         // Calculate how many tokens bought
@@ -191,7 +184,6 @@ contract ThetaTokenSale {
 
         // If past hard cap, throw
         uint tokenSoldAmount = token.totalSupply().mul(40).div(100); // 40% available for purchase
-        //require((tokenSoldAmount <= tokenSaleHardCap) && (boughtTokens <= tokenSaleHardCap.sub(tokenSoldAmount)));
         require((tokenSoldAmount <= tokenSaleHardCap));
         require(whitelistMap[_owner]);
 
@@ -227,14 +219,12 @@ contract ThetaTokenSale {
         saleStopped = false;
     }
 
-    // @notice Finalizes sale generating the tokens for Theta Dev.
-    // @dev Transfers the token controller power to 0x00.
+    // @notice Function to finalize the token sale.
+    // @dev Set the token controller to 0x00.
     function finalizeSale()
         only_after_sale
         only(root)
         public {
-        // This function cannot be successfully called twice, because it will set the controller to zero,
-        // and the mint call will fail if called again.
 
         // Sale yields token controller to address 0x00
         token.changeController(0);

@@ -212,10 +212,6 @@ contract('ThetaToken', function(accounts) {
             })
             .then(function(res) {
                 console.log('Is presale_addr ' + presale_addr + ' whitelisted?' + res);
-                return theta_token_sale.getWhitelist();
-            })
-            .then(function(res) {
-                console.log('All whitelisted accounts: ' + res);
             })
     });
 
