@@ -2,7 +2,6 @@ var ThetaToken = artifacts.require('ThetaToken');
 var ThetaTokenSale = artifacts.require('ThetaTokenSale');
 
 module.exports = function (deployer, network, accounts) {
-    var adminAddr    = '';
     var thetaToken;
     var thetaTokenSale;
 
@@ -15,11 +14,11 @@ module.exports = function (deployer, network, accounts) {
         .then(function (token_sale) {
             thetaTokenSale = token_sale;
             console.log('Changing thetaToken controller...');
-            return thetaToken.changeController(thetaTokenSale.address, {from: adminAddr});
+            return thetaToken.changeController(thetaTokenSale.address);
         })
         .then(function() {
             console.log('Setting thetaToken in thetaTokenSale...');
-            return thetaTokenSale.setThetaToken(thetaToken.address, {from: adminAddr});
+            return thetaTokenSale.setThetaToken(thetaToken.address);
         })
         .then(function() {
             console.log('---DEPLOY FINISHED---');
