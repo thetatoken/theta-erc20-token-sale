@@ -19,10 +19,10 @@ contract('ThetaToken', function(accounts) {
     var sale_start_block = web3.eth.blockNumber + 25;
     var sale_end_block = sale_start_block + 50;
     var unlock_time = sale_end_block + 25;
-    var presale_amount = 258200823 * (10 ** 18);
-    var precirculation_amount = 1892000 * (10 ** 18);
-    var donation_amount = 100 ** 18;
-    var cashout_amount = 50 * (10 ** 18);
+    var presale_amount = new web3.BigNumber(258200823 * Math.pow(10, 18));
+    var precirculation_amount = new web3.BigNumber(1892000 * Math.pow(10, 18));
+    var donation_amount = new web3.BigNumber(Math.pow(100, 18));
+    var cashout_amount = new web3.BigNumber(50 * Math.pow(10, 18));
 
     console.log("Imported node Accounts: \n", accounts);
 
@@ -174,7 +174,7 @@ contract('ThetaToken', function(accounts) {
         console.log('sale_start_block: ' + sale_start_block);
         assert(current_block_number < sale_start_block);
 
-       	purchase_eth = 0.1 * (10**18);
+       	purchase_eth = new web3.BigNumber(1 * Math.pow(10,18));
         return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
         	.then(function() {
         		return theta_token.balanceOf(public_sale_addr);
@@ -198,7 +198,7 @@ contract('ThetaToken', function(accounts) {
         		public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
         		console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
         		console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
-        		assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, 0, 'should not change!');
+        		assert(public_sale_addr_final_theta_balance.equals(public_sale_addr_init_theta_balance), 'should not change!');
             })
     });
 
@@ -244,13 +244,13 @@ contract('ThetaToken', function(accounts) {
     	};
         assert(web3.eth.blockNumber > sale_start_block);
 
-       	purchase_eth = 0.1 * (10**18);
+       	purchase_eth = new web3.BigNumber(1 * Math.pow(10,18));
         return theta_token_sale.activateSale({from: admin_addr, gas: 4700000})
             .then(function() {
-                return theta_token_sale.changeTokenSaleHardCap(presale_amount + purchase_eth * exchange_rate * 10000);
+                return theta_token_sale.changeTokenSaleHardCap(presale_amount.plus(purchase_eth.times(exchange_rate).times(10000)));
             })
             .then(function() {
-                return theta_token_sale.changeFundCollectedHardCap(purchase_eth * 10000);
+                return theta_token_sale.changeFundCollectedHardCap(purchase_eth.times(10000));
             })
         	.then(function() {
         		return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000});	
@@ -312,7 +312,7 @@ contract('ThetaToken', function(accounts) {
 
         assert(web3.eth.blockNumber > sale_start_block);
 
-        purchase_eth = 0.1 * (10**18);
+        purchase_eth = new web3.BigNumber(1 * Math.pow(10,18));
         return theta_token_sale.deleteAccountsFromWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
             .then(function() {
                 return theta_token.balanceOf(public_sale_addr);
@@ -336,8 +336,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
-                assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, 0, 'should decrease!');
-                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_final_eth_balance), 'Should cost some gas!');
+                assert(public_sale_addr_final_theta_balance.equals(public_sale_addr_init_theta_balance), 'should decrease!');
+                assert(public_sale_addr_init_eth_balance.greaterThan(public_sale_addr_final_eth_balance), 'should cost some gas!');
             })
     });
 
@@ -397,8 +397,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
-                assert.equal(public_sale_addr_final_theta_balance - public_sale_addr_init_theta_balance, 0, 'should not change!');
-                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_final_eth_balance), 'Should cost some gas!');
+                assert(public_sale_addr_final_theta_balance.equals(public_sale_addr_init_theta_balance), 'should not change!');
+                assert(public_sale_addr_init_eth_balance.greaterThan(public_sale_addr_final_eth_balance), 'should cost some gas!');
             })
     });
 
@@ -409,7 +409,7 @@ contract('ThetaToken', function(accounts) {
         
         assert(web3.eth.blockNumber > sale_start_block);
 
-        purchase_eth = 0.1 * (10**18); // 1 ether
+        purchase_eth = new web3.BigNumber(1 * Math.pow(10,18)); // 1 ether
         return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
             .then(function() {
                 return theta_token.totalSupply();
@@ -457,10 +457,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_eth_balance_1 = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_1.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_1.toString());
-                assert.equal(public_sale_addr_theta_balance_1 - public_sale_addr_init_theta_balance, purchase_eth * exchange_rate, 'should increase!');
-                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_eth_balance_1) + Number(purchase_eth), 'should decrease!');
-                //assert.equal(Number(public_sale_addr_init_eth_balance),
-                //             Number(public_sale_addr_eth_balance_1) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');                return theta_token.totalSupply();
+                assert(public_sale_addr_theta_balance_1.minus(public_sale_addr_init_theta_balance).equals(purchase_eth.times(exchange_rate)), 'should increase!');
+                assert(public_sale_addr_init_eth_balance.greaterThan(public_sale_addr_eth_balance_1.plus(purchase_eth)), 'should decrease!');
                 return theta_token.totalSupply();
             })
             .then(function(supply) {
@@ -486,7 +484,7 @@ contract('ThetaToken', function(accounts) {
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_2.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_2.toString());
                 assert.equal(public_sale_addr_theta_balance_2 - public_sale_addr_theta_balance_1, 0, 'should not change!');
-                assert(Number(public_sale_addr_eth_balance_1) > Number(public_sale_addr_eth_balance_2), 'Should cost some gas!');
+                assert(public_sale_addr_eth_balance_1.greaterThan(public_sale_addr_eth_balance_2), 'should cost some gas!');
                 return theta_token.totalSupply();
             })
             .then(function(supply) {
@@ -508,7 +506,7 @@ contract('ThetaToken', function(accounts) {
         
         assert(web3.eth.blockNumber > sale_start_block);
 
-        purchase_eth = 0.1 * (10**18); // 1 ether
+        purchase_eth = new web3.BigNumber(1 * Math.pow(10,18)); // 1 ether
         return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
             .then(function() {
                 return theta_token_sale.getFundCollected({from: admin_addr, gas: 4700000});
@@ -556,8 +554,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_eth_balance_1 = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_1.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_1.toString());
-                assert.equal(public_sale_addr_theta_balance_1 - public_sale_addr_init_theta_balance, purchase_eth * exchange_rate, 'should increase!');
-                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_eth_balance_1) + Number(purchase_eth), 'should decrease!');
+                assert(public_sale_addr_theta_balance_1.minus(public_sale_addr_init_theta_balance).equals(purchase_eth.times(exchange_rate)), 'should increase!');
+                assert(public_sale_addr_init_eth_balance.greaterThan(public_sale_addr_eth_balance_1.plus(purchase_eth)), 'should decrease!');
                 //assert.equal(Number(public_sale_addr_init_eth_balance),
                 //             Number(public_sale_addr_eth_balance_1) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');                return theta_token.totalSupply();
                 return theta_token.totalSupply();
@@ -584,8 +582,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_eth_balance_2 = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_2.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_2.toString());
-                assert.equal(public_sale_addr_theta_balance_2 - public_sale_addr_theta_balance_1, 0, 'should not change!');
-                assert(Number(public_sale_addr_eth_balance_1) > Number(public_sale_addr_eth_balance_2), 'Should cost some gas!');
+                assert(public_sale_addr_theta_balance_2.equals(public_sale_addr_theta_balance_1), 'should not change!');
+                assert(public_sale_addr_eth_balance_1.greaterThan(public_sale_addr_eth_balance_2), 'should cost some gas!');
                 return theta_token.totalSupply();
             })
             .then(function(supply) {
@@ -630,7 +628,7 @@ contract('ThetaToken', function(accounts) {
         console.log('-------- Integration test: emergency sale stop/restart --------');
         console.log('');
 
-        purchase_eth = 0.1 * (10**18); // 1 ether
+        purchase_eth = new web3.BigNumber(1 * Math.pow(10,18)); // 1 ether
         return theta_token_sale.addAccountsToWhitelist([public_sale_addr], {from: whitelist_controller, gas: 4700000})
             .then(function() {
                 return theta_token_sale.getFundCollected({from: admin_addr, gas: 4700000});
@@ -679,10 +677,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_eth_balance_1 = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_1.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_1.toString());
-                assert.equal(public_sale_addr_theta_balance_1 - public_sale_addr_init_theta_balance, purchase_eth * exchange_rate, 'should increase!');
-                assert(Number(public_sale_addr_init_eth_balance) > Number(public_sale_addr_eth_balance_1) + Number(purchase_eth), 'should decrease!');
-                //assert.equal(Number(public_sale_addr_init_eth_balance),
-                //             Number(public_sale_addr_eth_balance_1) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');                return theta_token.totalSupply();
+                assert(public_sale_addr_theta_balance_1.minus(public_sale_addr_init_theta_balance).equals(purchase_eth * exchange_rate), 'should increase!');
+                assert(public_sale_addr_init_eth_balance.greaterThan(public_sale_addr_eth_balance_1.plus(purchase_eth)), 'should decrease!');
                 return theta_token_sale.emergencyStopSale({from: admin_addr, gas: 4700000});
             })
             .then(function() {
@@ -699,8 +695,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_eth_balance_2 = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_2.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_2.toString());
-                assert.equal(public_sale_addr_theta_balance_2 - public_sale_addr_theta_balance_1, 0, 'should not change!');
-                assert(Number(public_sale_addr_eth_balance_1) > Number(public_sale_addr_eth_balance_2), 'Should cost some gas!');
+                assert(public_sale_addr_theta_balance_2.equals(public_sale_addr_theta_balance_1), 'should not change!');
+                assert(public_sale_addr_eth_balance_1.greaterThan(public_sale_addr_eth_balance_2), 'should cost some gas!');
                 return theta_token_sale.restartSale({from: admin_addr, gas: 4700000});
             })
             .then(function() {
@@ -717,10 +713,8 @@ contract('ThetaToken', function(accounts) {
                 public_sale_addr_eth_balance_3 = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_3.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_3.toString());
-                assert.equal(public_sale_addr_theta_balance_3 - public_sale_addr_theta_balance_2, purchase_eth * exchange_rate, 'should increase!');
-                assert(Number(public_sale_addr_eth_balance_2) > Number(public_sale_addr_eth_balance_3) + Number(purchase_eth), 'should decrease!');
-                //assert.equal(Number(public_sale_addr_init_eth_balance),
-                //             Number(public_sale_addr_eth_balance_1) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');                return theta_token.totalSupply();
+                assert(public_sale_addr_theta_balance_3.minus(public_sale_addr_theta_balance_2).equals(purchase_eth.times(exchange_rate)), 'should increase!');
+                assert(public_sale_addr_eth_balance_2.greaterThan(public_sale_addr_eth_balance_3.plus(purchase_eth)), 'should decrease!');
             })
     });
 
@@ -763,8 +757,8 @@ contract('ThetaToken', function(accounts) {
             .then(function(balance) {
                 precirculation_allowed_addr_balance_after_first_transfer = balance;
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-                assert.equal(presale_purchaser_after_first_transfer - presale_purchaser_init_balance, -transfer_amount_1, 'should decrease by the transfer amount!');
-                assert.equal(precirculation_allowed_addr_balance_after_first_transfer - precirculation_allowed_addr_init_balance, transfer_amount_1, 'should increase by the transfer amount!');
+                assert(presale_purchaser_after_first_transfer.minus(presale_purchaser_init_balance).equals(-transfer_amount_1), 'should decrease by the transfer amount!');
+                assert(precirculation_allowed_addr_balance_after_first_transfer.minus(precirculation_allowed_addr_init_balance).equals(transfer_amount_1), 'should increase by the transfer amount!');
             })
             .then(function() {
                 // transferring more amount than the balance, should fail
@@ -787,8 +781,8 @@ contract('ThetaToken', function(accounts) {
             .then(function(balance) {
                 precirculation_allowed_addr_balance_after_second_transfer = balance;
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-                assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, 0, 'should not change!');
-                assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, 0, 'should not change!');
+                assert(presale_purchaser_after_second_transfer.equals(presale_purchaser_after_first_transfer), 'should not change!');
+                assert(precirculation_allowed_addr_balance_after_second_transfer.equals(precirculation_allowed_addr_balance_after_first_transfer), 'should not change!');
             })
             .then(function() {
                 console.log('');
@@ -819,8 +813,8 @@ contract('ThetaToken', function(accounts) {
             .then(function(balance) {
                 precirculation_disallowed_addr_balance_after_third_transfer = balance;
                 console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-                assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, 0 , 'should not change!');
-                assert.equal(precirculation_disallowed_addr_balance_after_third_transfer - precirculation_disallowed_addr_init_balance, 0, 'should not change!');
+                assert(presale_purchaser_after_third_transfer.equals(presale_purchaser_after_second_transfer), 'should not change!');
+                assert(precirculation_disallowed_addr_balance_after_third_transfer.equals(precirculation_disallowed_addr_init_balance), 'should not change!');
             })
     });
 
@@ -831,10 +825,10 @@ contract('ThetaToken', function(accounts) {
 
         assert(web3.eth.blockNumber < unlock_time);
 
-        transfer_amount_1 = 1234;
-        transfer_amount_2 = 355;
-        transfer_amount_3 = 100;        
-        allowance_amount = 1000;
+        transfer_amount_1 = new web3.BigNumber(1234);
+        transfer_amount_2 = new web3.BigNumber(355);
+        transfer_amount_3 = new web3.BigNumber(100);        
+        allowance_amount = new web3.BigNumber(1000);
         precirculation_allowed_addr = streamer_addr;
         transfer_operator = streamer_addr;
         return theta_token_sale.allowPrecirculation(presale_addr, {from: admin_addr, gas: 4700000})
@@ -880,8 +874,8 @@ contract('ThetaToken', function(accounts) {
             .then(function(balance) {
                 precirculation_allowed_addr_balance_after_first_transfer = balance;
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_first_transfer.toString());
-                assert.equal(presale_purchaser_after_first_transfer - presale_purchaser_init_balance, 0, 'should not change!');
-                assert.equal(precirculation_allowed_addr_balance_after_first_transfer - precirculation_allowed_addr_init_balance, 0, 'should not change!');
+                assert(presale_purchaser_after_first_transfer.equals(presale_purchaser_init_balance), 'should not change!');
+                assert(precirculation_allowed_addr_balance_after_first_transfer.equals(precirculation_allowed_addr_init_balance), 'should not change!');
             })
             .then(function() {
                 console.log('');
@@ -920,9 +914,9 @@ contract('ThetaToken', function(accounts) {
             .then(function(balance) {
                 precirculation_allowed_addr_balance_after_second_transfer = balance;
                 console.log('precirculation allowed address balance: ' + precirculation_allowed_addr_balance_after_second_transfer.toString());
-                assert.equal(allowance_amount - allowance_remaining, transfer_amount_2, 'should decrease by transfer amount!');
-                assert.equal(presale_purchaser_after_second_transfer - presale_purchaser_after_first_transfer, -transfer_amount_2, 'should decrease by transfer amount!');
-                assert.equal(precirculation_allowed_addr_balance_after_second_transfer - precirculation_allowed_addr_balance_after_first_transfer, transfer_amount_2, 'should increase by transfer amount!');
+                assert(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2), 'should decrease by transfer amount!');
+                assert(presale_purchaser_after_second_transfer.minus(presale_purchaser_after_first_transfer).equals(-transfer_amount_2), 'should decrease by transfer amount!');
+                assert(precirculation_allowed_addr_balance_after_second_transfer.minus(precirculation_allowed_addr_balance_after_first_transfer).equals(transfer_amount_2), 'should increase by transfer amount!');
             })
             .then(function() {
                 console.log('');
@@ -967,9 +961,9 @@ contract('ThetaToken', function(accounts) {
             .then(function(balance) {
                 precirculation_disallowed_addr_balance_after_third_transfer = balance;
                 console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-                assert.equal(allowance_amount - allowance_remaining, transfer_amount_2, 'should decrease by transfer amount!');
-                assert.equal(presale_purchaser_after_third_transfer - presale_purchaser_after_second_transfer, 0, 'should not change!');
-                assert.equal(precirculation_disallowed_addr_balance_after_third_transfer - precirculation_disallowed_addr_init_balance, 0, 'should not change!');
+                assert(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2), 'should decrease by transfer amount!');
+                assert(presale_purchaser_after_third_transfer.equals(presale_purchaser_after_second_transfer), 'should not change!');
+                assert(precirculation_disallowed_addr_balance_after_third_transfer.equals(precirculation_disallowed_addr_init_balance), 'should not change!');
             })
     });
 
@@ -992,20 +986,20 @@ contract('ThetaToken', function(accounts) {
 
         return theta_token.totalSupply()
             .then(function(supply) {
-                current_supply = Number(supply);
-                current_sold_tokens = current_supply * 40 / 100;
+                current_supply = new web3.BigNumber(supply);
+                current_sold_tokens = current_supply.times(40).div(100);
                 console.log('');
                 console.log('number of tokens sold: ' + current_sold_tokens.toString());
                 return theta_token_sale.getFundCollected({from: admin_addr, gas: 4700000});
             })
             .then(function(fund_collected) {
-                current_fund_collected = fund_collected;
+                current_fund_collected = new web3.BigNumber(fund_collected);
                 console.log('fund collected: ' + current_fund_collected.toString());
                 return theta_token.balanceOf(public_sale_addr);
             })
             .then(function(theta_balance) {
-                public_sale_addr_init_theta_balance = theta_balance;
-                public_sale_addr_init_eth_balance = web3.eth.getBalance(public_sale_addr);
+                public_sale_addr_init_theta_balance = new web3.BigNumber(theta_balance);
+                public_sale_addr_init_eth_balance = new web3.eth.getBalance(public_sale_addr);
                 console.log('');
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
@@ -1017,28 +1011,26 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(public_sale_addr);
             })
             .then(function(theta_balance) {
-                public_sale_addr_theta_balance_1 = theta_balance;
+                public_sale_addr_theta_balance_1 = new web3.BigNumber(theta_balance);
                 public_sale_addr_eth_balance_1 = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_theta_balance_1.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_eth_balance_1.toString());
-                assert.equal(public_sale_addr_theta_balance_1 - public_sale_addr_init_theta_balance, 0, 'should not change!');
-                assert(Number(public_sale_addr_init_eth_balance) >= Number(public_sale_addr_eth_balance_1), 'should cost some gas!');
-                //assert.equal(Number(public_sale_addr_init_eth_balance),
-                //             Number(public_sale_addr_eth_balance_1) + Number(purchase_eth) + Number(tx_gas_used), 'ETH balance should decrease by the expected amount!');                return theta_token.totalSupply();
+                assert(public_sale_addr_theta_balance_1.equals(public_sale_addr_init_theta_balance), 'should not change!');
+                assert(public_sale_addr_init_eth_balance.greaterThanOrEqualTo(public_sale_addr_eth_balance_1), 'should cost some gas!');
                 return theta_token.totalSupply();
             })
             .then(function(supply) {
-                current_supply = Number(supply);
-                current_sold_tokens_1 = current_supply * 40 / 100;
+                current_supply = new web3.BigNumber(supply);
+                current_sold_tokens_1 = current_supply.times(40).div(100);
                 console.log('');
                 console.log('number of tokens sold: ' + current_sold_tokens.toString());
                 return theta_token_sale.getFundCollected({from: admin_addr, gas: 4700000});
             })
             .then(function(fund_collected) {
-                current_fund_collected_1 = fund_collected;
+                current_fund_collected_1 = new web3.BigNumber(fund_collected);
                 console.log('fund collected: ' + current_fund_collected_1.toString());
-                assert.equal(current_sold_tokens, current_sold_tokens_1, 'should not have sold more tokens');
-                assert.equal(Number(current_fund_collected), Number(current_fund_collected_1), 'should not have collected more fund');
+                assert(current_sold_tokens.equals(current_sold_tokens_1), 'should not have sold more tokens');
+                assert(current_fund_collected.equals(current_fund_collected_1), 'should not have collected more fund');
             })
     });
 
@@ -1060,7 +1052,7 @@ contract('ThetaToken', function(accounts) {
         assert(web3.eth.blockNumber > unlock_time);
 
         past_unlock_time = 0;
-        transfer_amount_1 = 1234;
+        transfer_amount_1 = new web3.BigNumber(1234);
         return theta_token_sale.allowPrecirculation(presale_addr, {from: admin_addr, gas: 4700000})
             .then(function() {
                 return theta_token_sale.allowPrecirculation(precirculation_allowed_addr, {from: admin_addr, gas: 4700000});
@@ -1160,11 +1152,11 @@ contract('ThetaToken', function(accounts) {
         assert(web3.eth.blockNumber > unlock_time);
 
         past_unlock_time = 0;
-        transfer_amount_1 = 1234;
-        transfer_amount_2 = 355;
-        transfer_amount_3 = 100;
-        attacker_transfer_amount = 10;        
-        allowance_amount = 1000;
+        transfer_amount_1 = new web3.BigNumber(1234);
+        transfer_amount_2 = new web3.BigNumber(355);
+        transfer_amount_3 = new web3.BigNumber(100);
+        attacker_transfer_amount = new web3.BigNumber(10);        
+        allowance_amount = new web3.BigNumber(1000);
         return theta_token_sale.allowPrecirculation(presale_addr, {from: admin_addr, gas: 4700000})
             .then(function() {
                 return theta_token_sale.allowPrecirculation(precirculation_allowed_addr, {from: admin_addr, gas: 4700000});
@@ -1299,7 +1291,7 @@ contract('ThetaToken', function(accounts) {
             .then(function(balance) {
                 precirculation_disallowed_addr_balance_after_third_transfer = new web3.BigNumber(balance);
                 console.log('precirculation disallowed address balance: ' + precirculation_disallowed_addr_balance_after_third_transfer.toString());
-                assert.equal(allowance_amount - allowance_remaining, transfer_amount_2 + transfer_amount_3, 'should decrease by the total transfer amount!');
+                assert(allowance_amount.minus(allowance_remaining).equals(transfer_amount_2.plus(transfer_amount_3)), 'should decrease by the total transfer amount!');
                 assert(presale_purchaser_after_third_transfer.minus(presale_purchaser_after_second_transfer).equals(-transfer_amount_3), 'should decrease by transfer amount!');
                 assert(precirculation_disallowed_addr_balance_after_third_transfer.minus(precirculation_disallowed_addr_init_balance).equals(transfer_amount_3), 'should decrease by transfer amount!');
             })
