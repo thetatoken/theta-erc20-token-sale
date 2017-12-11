@@ -41,7 +41,7 @@ contract ThetaTokenSale {
     ThetaToken public token;                       // The token
 
     uint constant public decimals = 18;
-    uint constant public dust = 1 szabo;           // Minimum investment
+    uint constant public dust = 1 ether;           // Minimum investment
     uint public tokenSaleHardCap = 30 * (10**6) * (10**decimals); // Token sale hardcap
     uint public fundCollectedHardCap = 25000 * (10**18); // max ETH collected
 
