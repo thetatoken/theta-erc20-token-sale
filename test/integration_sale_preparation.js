@@ -15,8 +15,8 @@ contract('ThetaToken', function(accounts) {
     var theta_token;
     var theta_token_sale;
     var exchange_rate = 3000;
-    var sell_start_block = 120;
-    var sell_end_block = 220;
+    var sell_start_block = web3.eth.blockNumber + 120;
+    var sell_end_block = web3.eth.blockNumber + 220;
     var unlock_time = 70000;
     var presale_amount = new web3.BigNumber(20000000);
     var precirculation_amount = new web3.BigNumber(3000);
