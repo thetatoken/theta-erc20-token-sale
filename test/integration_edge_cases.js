@@ -379,7 +379,7 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(public_sale_addr);
             })
             .then(function(theta_balance) {
-                public_sale_addr_init_theta_balance = theta_balance;
+                public_sale_addr_init_theta_balance = new web3.BigNumber(theta_balance);
                 public_sale_addr_init_eth_balance = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
@@ -393,12 +393,45 @@ contract('ThetaToken', function(accounts) {
                 return theta_token.balanceOf(public_sale_addr);
             })
             .then(function(theta_balance) {
-                public_sale_addr_final_theta_balance = theta_balance;
+                public_sale_addr_final_theta_balance = new web3.BigNumber(theta_balance);
                 public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
                 console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
                 console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
                 assert(public_sale_addr_final_theta_balance.equals(public_sale_addr_init_theta_balance), 'should not change!');
                 assert(public_sale_addr_init_eth_balance.greaterThan(public_sale_addr_final_eth_balance), 'should cost some gas!');
+
+                console.log('Reducing minimal payment..');
+                return theta_token_sale.changeMinimalPayment(purchase_eth, {from: admin_addr});
+            })
+            .then(function() {
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_init_theta_balance = new web3.BigNumber(theta_balance);
+                public_sale_addr_init_eth_balance = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_init_theta_balance.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_init_eth_balance.toString());
+                console.log('>>> public sale purchaser sending ' + purchase_eth + ' wei (ETH) to ThetaTokenSale...');
+                return web3.eth.sendTransaction({from: public_sale_addr, to: theta_token_sale.address, value: purchase_eth, gas: 4700000});
+            })
+            .then(function() {
+                return theta_token.balanceOf(public_sale_addr);
+            })
+            .then(function(theta_balance) {
+                public_sale_addr_final_theta_balance = new web3.BigNumber(theta_balance);
+                public_sale_addr_final_eth_balance = web3.eth.getBalance(public_sale_addr);
+                console.log('public sale purchaser Theta balance: ' + public_sale_addr_final_theta_balance.toString());
+                console.log('public sale purchaser ETH balance: ' + public_sale_addr_final_eth_balance.toString());
+                assert(public_sale_addr_final_theta_balance.equals(public_sale_addr_init_theta_balance.plus(purchase_eth * exchange_rate)), 'should increase by purchased amount!');
+                assert(public_sale_addr_init_eth_balance.greaterThan(public_sale_addr_final_eth_balance), 'should cost some gas!');
+                console.log('Changing minimal payment back to 1 ether')
+                return theta_token_sale.changeMinimalPayment(1000000000000000000, {from: admin_addr});
+            })
+            .then(function() {
+                return theta_token_sale.minimalPayment.call();
+            })
+            .then(function(minimal_payment) {
+                assert.equal(minimal_payment, 1000000000000000000, 'minimal payment should have been changed back to 1 ether');
             })
     });
 
