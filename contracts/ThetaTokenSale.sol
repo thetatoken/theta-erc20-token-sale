@@ -41,7 +41,7 @@ contract ThetaTokenSale {
     ThetaToken public token;                       // The token
 
     uint constant public decimals = 18;
-    uint constant public dust = 1 ether;           // Minimum investment
+    uint public minimalPayment = 1 ether;           // Minimum payment
     uint public tokenSaleHardCap = 30 * (10**6) * (10**decimals); // Token sale hardcap
     uint public fundCollectedHardCap = 25000 * (10**18); // max ETH collected
 
@@ -173,7 +173,7 @@ contract ThetaTokenSale {
         only_during_sale_period
         only_sale_not_stopped
         non_zero_address(_owner)
-        at_least(dust)
+        at_least(minimalPayment)
         internal {
 
         uint fundReceived = msg.value;
@@ -243,6 +243,10 @@ contract ThetaTokenSale {
         non_zero_address(_newFundDeposit)
         only(admin) public {
         fundDeposit = _newFundDeposit;
+    }
+
+    function changeMinimalPayment(uint _newMinimalPayment) only(admin) public {
+        minimalPayment = _newMinimalPayment;
     }
 
     function changeTokenSaleHardCap(uint _newTokenSaleHardCap) only(admin) public {
