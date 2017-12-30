@@ -192,7 +192,9 @@ contract ThetaTokenSale {
 
         // Allocate tokens. This will fail after sale is finalized in case it is hidden cap finalized.
         uint reserveTokens = calcReserve(boughtTokens);
+        //mints tokens to be distributed accordingly to https://s3.us-east-2.amazonaws.com/assets.thetatoken.org/Theta-FAQ-latest.pdf
         require(token.mint(thetaLabsReserve, reserveTokens));
+        //mints tokens for the buyer
         require(token.mint(_owner, boughtTokens));
 
         // Save total collected amount
