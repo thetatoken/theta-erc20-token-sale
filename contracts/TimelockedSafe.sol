@@ -47,7 +47,7 @@ contract TimelockedSafe {
     	startTime = now;
     }
 
-    function withdraw(uint _withdrawAmountInWei) returns (bool) public {    	
+    function withdraw(uint _withdrawAmountInWei) public returns (bool) {    	
     	uint timeElapsed = now.sub(startTime);
     	uint monthsElapsed = (timeElapsed.div(oneMonth)).add(1);
     	require(monthsElapsed >= lockingPeriodInMonths);
