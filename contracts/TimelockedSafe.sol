@@ -2,12 +2,21 @@ pragma solidity ^0.4.18;
 
 
 import "./SafeMath.sol";
-import "./ThetaToken.sol";
 
 
 //
 //    Copyright 2017, Theta Labs, Inc.
 //
+
+
+contract Token {
+
+    function balanceOf(address _owner) public constant returns (uint balance);
+
+    function transfer(address _to, uint _value) public returns (bool success);
+
+}
+
 
 contract TimelockedSafe {
 
@@ -16,6 +25,8 @@ contract TimelockedSafe {
 	uint constant public decimals = 18;
 
 	uint constant public oneMonth = 30 days;
+
+    address public adminAddress;
 
     address public withdrawAddress;
 
@@ -26,24 +37,26 @@ contract TimelockedSafe {
 
     uint public monthlyWithdrawLimitInWei; // monthly withdraw limit during the vesting period
 
-    ThetaToken public token;
+    Token public token;
 
     uint public startTime;
 
-    function TimelockedSafe(address _withdrawAddress,
+    function TimelockedSafe(address _adminAddress, address _withdrawAddress,
     	uint _lockingPeriodInMonths, uint _vestingPeriodInMonths,
     	uint _monthlyWithdrawLimitInWei, address _token) public {
+        require(_adminAddress != 0);
     	require(_withdrawAddress != 0);
     	require(_token != 0);
 
     	// just to prevent mistakenly passing in a value with incorrect token unit
     	require(_monthlyWithdrawLimitInWei > 100 * (10 ** decimals));
 
+        adminAddress = _adminAddress;
     	withdrawAddress = _withdrawAddress;
     	lockingPeriodInMonths = _lockingPeriodInMonths;
     	vestingPeriodInMonths = _vestingPeriodInMonths;
     	monthlyWithdrawLimitInWei = _monthlyWithdrawLimitInWei;
-    	token = ThetaToken(_token);
+    	token = Token(_token);
     	startTime = now;
     }
 
@@ -66,6 +79,31 @@ contract TimelockedSafe {
     	require(token.transfer(withdrawAddress, _withdrawAmountInWei));
 
     	return true;
+    }
+
+    function changeWithdrawAddress(address _newWithdrawAddress) public only(adminAddress) {
+        withdrawAddress = _newWithdrawAddress;
+    }
+
+    function changeLockingPeriod(uint _newLockingPeriodInMonths) public only(adminAddress) {
+        lockingPeriodInMonths = _newLockingPeriodInMonths;
+    }
+
+    function changeVestingPeriod(uint _newVestingPeriodInMonths) public only(adminAddress) {
+        vestingPeriodInMonths = _newVestingPeriodInMonths;
+    }
+
+    function changeMonthlyWithdrawLimit(uint _newMonthlyWithdrawLimitInWei) public only(adminAddress) {
+        monthlyWithdrawLimitInWei = _newMonthlyWithdrawLimitInWei;
+    }
+
+    function finalizeConfig() public only(adminAddress) {
+        adminAddress = 0x0; // config finalized, give up control 
+    }
+
+    modifier only(address x) {
+        require(msg.sender == x);
+        _;
     }
 
 }
