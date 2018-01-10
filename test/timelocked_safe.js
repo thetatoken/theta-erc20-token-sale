@@ -2,6 +2,7 @@ var ThetaToken = artifacts.require('ThetaToken');
 var ThetaTokenSale = artifacts.require('ThetaTokenSale');
 var TimelockedSafe = artifacts.require('TimelockedSafe');
 
+
 contract('TimelockedSafeTest', function(accounts) {
     var decimals = 18;
 
@@ -92,6 +93,12 @@ contract('TimelockedSafeTest', function(accounts) {
             })
             .catch(function() {
                 console.log('Changing monthly withdraw limit failed since the message was not from the admin, expected.');
+            })
+            .then(function() {
+                return timelocked_safe.changeStartTime(0, {from: attacker_addr, gas:4700000});
+            })
+            .catch(function() {
+                console.log('Changing start time failed since the message was not from the admin, expected.');
             })
     });
 
@@ -196,12 +203,19 @@ contract('TimelockedSafeTest', function(accounts) {
 
         return timelocked_safe.startTime.call()
             .then(function(res) {
-                current_start_time = new web3.BigNumber(res);
-                console.log('Current start time: ' + current_start_time);
-                start_time_one_month_earlier = current_start_time.minus(seconds_per_month);
+                current_start_time = Number(res);
+                start_time_date = new Date(current_start_time * 1000);
+                console.log('Current start time: ' + current_start_time + ' (' + start_time_date.toUTCString() + ')');
+                start_time_one_month_earlier = current_start_time - seconds_per_month;
                 return timelocked_safe.changeStartTime(start_time_one_month_earlier);
             })
+            .then(function() {
+                return timelocked_safe.startTime.call();
+            })
             .then(function(res) {
+                updated_start_time = Number(res);
+                updated_start_time_date = new Date(updated_start_time * 1000);
+                console.log('Updated start time: ' + updated_start_time + ' (' + updated_start_time_date.toUTCString() + ')');
                 return theta_token.balanceOf(timelocked_safe.address);
             })
             .then(function(bal) {
@@ -230,6 +244,147 @@ contract('TimelockedSafeTest', function(accounts) {
 
                 assert(safe_bal0.minus(second_month_withdraw_amount_in_wei).equals(safe_bal1));
                 assert(withdraw_bal1.minus(second_month_withdraw_amount_in_wei).equals(withdraw_bal0));
+            })
+    });
+
+    it ("TimelockedSafe test: one year locking with finalized config", function() {
+        console.log('----------------');
+
+        var locking_period_in_months = 12;
+        var vesting_period_in_months = 0;
+        var monthly_widthraw_limit_in_wei = new web3.BigNumber(10 ** decimals).times(20.997).times(10 ** 6); // 20.997 million tokens monthly limit
+        var one_time_withdraw_amount_in_wei = new web3.BigNumber(10 ** decimals).times(20.997).times(10 ** 6); // 20.997 million tokens one-time withdraw
+        var seconds_per_year = new web3.BigNumber(365).times(24).times(3600);
+
+        return timelocked_safe.changeLockingPeriod(locking_period_in_months, {from: admin_addr, gas:4700000})
+            .then(function() {
+                return timelocked_safe.changeVestingPeriod(vesting_period_in_months, {from: admin_addr, gas:4700000});
+            })
+            .then(function() {
+                return timelocked_safe.changeMonthlyWithdrawLimit(monthly_widthraw_limit_in_wei, {from: admin_addr, gas:4700000});
+            })
+            .then(function() {
+                return timelocked_safe.lockingPeriodInMonths.call();
+            })
+            .then(function(res) {
+                console.log('Locking period (months): ' + res);
+            })
+            .then(function() {
+                return timelocked_safe.vestingPeriodInMonths.call();
+            })
+            .then(function(res) {
+                console.log('Vesting period (months): ' + res);
+            })
+            .then(function() {
+                return timelocked_safe.monthlyWithdrawLimitInWei.call();
+            })
+            .then(function(res) {
+                console.log('Monthly withdraw limit (Wei): ' + new web3.BigNumber(res));
+            })
+            .then(function() {
+                return timelocked_safe.startTime.call();
+            })
+            .then(function(res) {
+                current_start_time = Number(res);
+                current_start_time_date = new Date(current_start_time * 1000);
+                console.log('Current start time: ' + current_start_time + ' (' + current_start_time_date.toUTCString() + ')');
+                return theta_token.balanceOf(timelocked_safe.address);
+            })
+            .then(function() {
+                console.log('>>>>> Attempt to withdraw ' + withdraw_amount_in_wei + ' Wei Theta tokens...');
+                return timelocked_safe.withdraw(withdraw_amount_in_wei);
+            })
+            .catch(function() {
+                console.log('>>>>> Withdraw failed since locked period not ended yet, expected.');
+            })
+            .then(function() {
+                return timelocked_safe.startTime.call()
+            })
+            .then(function(res) {
+                start_time_one_year_earlier = Number(res) - seconds_per_year;
+                return timelocked_safe.changeStartTime(start_time_one_year_earlier);
+            })
+            .then(function() {
+                return timelocked_safe.startTime.call();
+            })
+            .then(function(res) {
+                updated_start_time = Number(res);
+                updated_start_time_date = new Date(updated_start_time * 1000);
+                console.log('Updated start time: ' + updated_start_time + ' (' + updated_start_time_date.toUTCString() + ')');
+                return theta_token.balanceOf(timelocked_safe.address);
+            })
+            .then(function() {
+                return timelocked_safe.finalizeConfig({from: admin_addr, gas:4700000});
+            })
+            .then(function() {
+                return theta_token.balanceOf(timelocked_safe.address);
+            })
+            .then(function(bal) {
+                safe_bal0 = new web3.BigNumber(bal);
+                console.log('Theta token balance of timelocked safe  ' + timelocked_safe.address + ' is ' + safe_bal0);
+                return theta_token.balanceOf(widthdraw_addr);
+            })
+            .then(function(bal) {
+                withdraw_bal0 = new web3.BigNumber(bal);
+                console.log('Theta token balance of withdraw address ' + widthdraw_addr + ' is ' + withdraw_bal0);
+            })
+            .then(function() {
+                console.log('>>>>> Withdraw ' + one_time_withdraw_amount_in_wei + ' Wei Theta tokens...');
+                return timelocked_safe.withdraw(one_time_withdraw_amount_in_wei);
+            })
+            .then(function() {
+                console.log('>>>>> Withdraw succeeded');
+                return theta_token.balanceOf(timelocked_safe.address);
+            })
+            .then(function(bal) {
+                safe_bal1 = new web3.BigNumber(bal);
+                console.log('Theta token balance of timelocked safe  ' + timelocked_safe.address + ' is ' + safe_bal1);
+                return theta_token.balanceOf(widthdraw_addr);
+            })
+            .then(function(bal) {
+                withdraw_bal1 = new web3.BigNumber(bal);
+                console.log('Theta token balance of withdraw address ' + widthdraw_addr + ' is ' + withdraw_bal1);
+
+                assert(safe_bal0.minus(one_time_withdraw_amount_in_wei).equals(safe_bal1));
+                assert(withdraw_bal1.minus(one_time_withdraw_amount_in_wei).equals(withdraw_bal0));
+            })
+            .then(function() {
+                return timelocked_safe.adminAddress.call();
+            })
+            .then(function(res) {
+                var new_admin_addr = res;
+                console.log('Function finalizeConfig() called, now adminAddress is: ' + res);
+                asssert(new_admin_addr == 0x0);
+            })
+            .then(function() {
+                return timelocked_safe.changeWithdrawAddress(0x0, {from: admin_addr, gas:4700000})
+            })
+            .catch(function() {
+                console.log('Changing withdraw address failed since finalizeConfig() already called, expected.');
+            })
+            .then(function() {
+                return timelocked_safe.changeLockingPeriod(locking_period_in_months, {from: admin_addr, gas:4700000})
+            })
+            .catch(function() {
+                console.log('Changing locking period failed since finalizeConfig() already called, expected.');
+            })
+            .then(function() {
+                return timelocked_safe.changeVestingPeriod(vesting_period_in_months, {from: admin_addr, gas:4700000});
+            })
+            .catch(function() {
+                console.log('Changing vesting period failed since finalizeConfig() already called, expected.');
+            })
+            .then(function() {
+                return timelocked_safe.changeMonthlyWithdrawLimit(monthly_widthraw_limit_in_wei, {from: admin_addr, gas:4700000});
+            })
+            .catch(function() {
+                console.log('Changing monthly withdraw limit failed since finalizeConfig() already called, expected.');
+            })
+            .then(function() {
+                return timelocked_safe.changeStartTime(0, {from: admin_addr, gas:4700000});
+            })
+            .catch(function() {
+                console.log('Changing start time failed since finalizeConfig() already called, expected.');
             })
     });
 
