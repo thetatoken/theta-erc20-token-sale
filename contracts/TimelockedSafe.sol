@@ -10,11 +10,10 @@ import "./SafeMath.sol";
 
 
 contract Token {
-
+    
     function balanceOf(address _owner) public constant returns (uint balance);
-
+    
     function transfer(address _to, uint _value) public returns (bool success);
-
 }
 
 
@@ -46,7 +45,6 @@ contract TimelockedSafe {
     	uint _monthlyWithdrawLimitInWei, address _token) public {
         require(_adminAddress != 0);
     	require(_withdrawAddress != 0);
-    	require(_token != 0);
 
     	// just to prevent mistakenly passing in a value with incorrect token unit
     	require(_monthlyWithdrawLimitInWei > 100 * (10 ** decimals));
@@ -79,6 +77,14 @@ contract TimelockedSafe {
     	require(token.transfer(withdrawAddress, _withdrawAmountInWei));
 
     	return true;
+    }
+
+    function changeStartTime(uint _newStartTime) public only(adminAddress) {
+        startTime = _newStartTime;
+    }
+
+    function changeTokenAddress(address _newTokenAddress) public only(adminAddress) {
+        token = Token(_newTokenAddress);
     }
 
     function changeWithdrawAddress(address _newWithdrawAddress) public only(adminAddress) {
