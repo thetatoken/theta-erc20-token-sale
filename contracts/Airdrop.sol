@@ -1,29 +1,44 @@
 pragma solidity ^0.4.18;
 
-import "./ThetaToken.sol";
-
-
 //
 //    Copyright 2017, Theta Labs, Inc.
 //
 
+contract Token {
+    
+    function balanceOf(address _owner) public constant returns (uint balance);
+    
+    function transfer(address _to, uint _value) public returns (bool success);
+}
+
 
 contract Airdrop {
 
-	uint8 public constant decimals = 18;
+	Token token;
 
-	ThetaToken token;
+	address public admin = 0x0;
 
-	function Airdrop(address _token) public {
+	function Airdrop(address _token, address _admin) public {
 		require(_token != 0x0);
-		token = ThetaToken(_token);
+		require(_admin != 0x0);
+		token = Token(_token);
+		admin = _admin;
 	}
 
-    function dropInBatch(address _source, address[] _recipients, uint _amountInWei) public {
+    function dropInBatch(address[] _recipients, uint _tokenAmountInWei) only(admin) public {
     	for (uint i = 0; i < _recipients.length; i ++) {
             address recipient = _recipients[i];
-            token.transferFrom(_source, recipient, _amountInWei);
+            token.transfer(recipient, _tokenAmountInWei);
         }
+    }
+
+    function withdrawEther(address withdrawAddress, uint _etherAmountInWei) only(admin) public {
+    	withdrawAddress.transfer(_etherAmountInWei);
+    }
+
+    modifier only(address x) {
+        require(msg.sender == x);
+        _;
     }
 
 }
