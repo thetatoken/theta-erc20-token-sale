@@ -32,8 +32,12 @@ contract Airdrop {
         }
     }
 
-    function withdrawEther(address withdrawAddress, uint _etherAmountInWei) only(admin) public {
-    	withdrawAddress.transfer(_etherAmountInWei);
+    function withdrawEther(address _withdrawAddress, uint _etherAmountInWei) only(admin) public {
+    	_withdrawAddress.transfer(_etherAmountInWei);
+    }
+
+    function changeAdmin(address _newAdmin) only(admin) public {
+    	admin = _newAdmin;
     }
 
     modifier only(address x) {
